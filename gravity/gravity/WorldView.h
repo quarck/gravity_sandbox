@@ -19,15 +19,15 @@ namespace gravity
 	struct WorldViewDetails
 	{
 		int numActiveThreads;
-		long currentIteration;
-		int iterationsPerSecond;
+		int64_t secondsEmulated;
+		double timeRate; // seconds of emulated time per second of a real time 
 		bool showDetailedcontrols;
 		bool paused;
 
 		WorldViewDetails(int nThr, bool p) 
 			: numActiveThreads{ nThr }
-			, currentIteration { 0 }
-			, iterationsPerSecond { 0 }
+			, secondsEmulated{ 0 }
+			, timeRate{ 0 }
 			, showDetailedcontrols { false }
 			, paused { p }
 		{
@@ -44,7 +44,7 @@ namespace gravity
 		static constexpr uint32_t VERDA_KOLORO = 0xff006f00u;
 		static constexpr uint32_t CFG_CLR_FOREGROUND = 0xff9f004fu;
 
-		static constexpr double LOCATION_SCALE{ 1.496e+11 * 8 / props::ViewPortWidth }; // 4AU
+		static constexpr double LOCATION_SCALE{ 1.496e+11 * 16 / props::ViewPortWidth }; 
 		
 		TWorld& _world;
 
@@ -96,7 +96,15 @@ namespace gravity
 			glPixelZoom(1.f, 1.f);
 
 			std::ostringstream ostr;
-			ostr << "ITER: " << details.currentIteration << ", IPS: " << details.iterationsPerSecond;
+
+			int64_t seconds_emulated = details.secondsEmulated;
+			int64_t years = seconds_emulated / (365 * 24 * 3600);
+			seconds_emulated %= (365 * 24 * 3600);
+			int64_t days = seconds_emulated / (24 * 3600);
+
+			ostr << "Y: " << years << ", D:" << days;
+			
+			ostr << ", R: " << static_cast<int64_t>(details.timeRate / 1000) << "k:1";
 
 			std::ostringstream rcfg;
 			rcfg << "#THR: " << details.numActiveThreads;
@@ -107,7 +115,7 @@ namespace gravity
 					std::pair(VERDA_KOLORO, ostr.str()),
 					std::pair(CFG_CLR_FOREGROUND, rcfg.str()),
 				});
-			_iterAndCfgLabel.DrawAt(-1.0, 0.88);
+			_iterAndCfgLabel.DrawAt(-1.0, 0.94);
 
 			glPopMatrix();
 		}
@@ -132,13 +140,13 @@ namespace gravity
 			{
 				glColor3f(1.0f, 1.0f, 1.0f);
 			}
-			else if (body.temperature > 1000.0)
+			else if (body.temperature > 2500.0)
+			{
+				glColor3f(1.0f, 1.0f, 0.0f);
+			}
+			else if (body.temperature > 700.0)
 			{
 				glColor3f(1.0f, 0.0f, 0.0f);
-			}
-			else if (body.temperature > 500.0)
-			{
-				glColor3f((body.temperature - 500.0) / 500.0, 0.4f, 1.0f);
 			}
 			else
 			{

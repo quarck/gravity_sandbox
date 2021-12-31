@@ -31,7 +31,7 @@ namespace gravity
 { 
     class World
     {
-	private:
+	public:
 		static constexpr double GRAVITATIONAL_CONSTANT = 6.67430e-11; // m*m*m/(kg*s*s)
 
 		static constexpr double TIME_DELTA{ 10 }; // seconds
@@ -42,6 +42,7 @@ namespace gravity
 		static constexpr double EARTH_SUN_DISTANCE{ 147.1e+9 }; // meters 
 		static constexpr double EARTH_ORBITAL_VELOCITY{ 29.78e+3 }; // m/s
 
+	private:
         int _numWorkerThreads;
 
         std::vector<mass_body> _objects;
@@ -53,33 +54,39 @@ namespace gravity
         std::string _workingFolder;
         bool _workingFolderCreated{ false };
 
-        ThreadGrid _grid;
+        //ThreadGrid _grid;
+
+		std::vector<std::thread> _runners;
 
 	public:
-        World(
-            const std::string& workingFolder,
-            int nWorkerThreads
-        )
-            : _grid(nWorkerThreads)
-            , _workingFolder(workingFolder)
+        World(const std::string& workingFolder, int nWorkerThreads)
+            :  _workingFolder(workingFolder)
             , _numWorkerThreads(nWorkerThreads)
         {
 			
 			mass_body sun{};
-			sun.mass = 1.989e+30 * 1; // kg
+			sun.mass = 1.989e+30; // kg
 			sun.radius = 696340'000; // m
 			sun.temperature = 10000000;
 			_objects.push_back(sun);
 
+			mass_body jupyter{};
+			jupyter.mass = 1.898e+27; // kg
+			jupyter.radius = 69911'000; // m
+			jupyter.location.x = 778.5e+9; // m
+			jupyter.velocity.y = 13.06e+3; // m/s
+			jupyter.temperature = 273;
+			_objects.push_back(jupyter);
 
-			for (int i = 0; i < 17; ++i)
+
+			for (int i = 0; i < 32; ++i)
 			{
 				mass_body earth{};
 				earth.mass = 5.972e+24; // kg
 				earth.radius = 6500'000; // m
 				earth.temperature = 300; // K
 
-				double loc_angle = M_PI * 2.0 / 17 * i;
+				double loc_angle = M_PI * 2.0 / 32 * i;
 				double vec_angle = loc_angle + M_PI / 2.0;
 
 				earth.location.x = EARTH_SUN_DISTANCE * std::cos(loc_angle); 
@@ -87,13 +94,13 @@ namespace gravity
 				earth.velocity.x = EARTH_ORBITAL_VELOCITY * std::cos(vec_angle);
 				earth.velocity.y = EARTH_ORBITAL_VELOCITY * std::sin(vec_angle);
 
-				if (i < 1)
-				{
-					earth.velocity.x *= 0.9999;
-					earth.velocity.y *= 0.9999;
+				//if (i < 1)
+				//{
+				//	earth.velocity.x *= 0.99;
+				//	earth.velocity.y *= 0.99;
 
-					earth.temperature = 1000; // K
-				}
+				//	earth.temperature = 1000; // K
+				//}
 				_objects.push_back(earth);
 			}
 
@@ -135,9 +142,115 @@ namespace gravity
                 _objects[i].load_from(stream);
             }
 		}
+
+		//
+		// caller must ensure i != j
+		//
+		void iterate_gravity_forces(int i, int j) noexcept
+		{
+			auto& a{ _objects[i] };
+			auto& b{ _objects[j] };
+
+			auto r_ba = b.location - a.location;
+			auto r_modulo = r_ba.modulo();
+
+			if (r_modulo > a.radius + b.radius)
+			{
+				auto F_ab = r_ba * (GRAVITATIONAL_CONSTANT * a.mass * b.mass / std::pow(r_modulo, 3.0));
+				a.gravity_force += F_ab;
+				b.gravity_force -= F_ab;
+
+				if (r_modulo < a.radius * 10)
+				{
+					a.temperature = 1000; // tidal forces stirr the mantel, floor is lava in the whole planet now
+				}
+
+				if (r_modulo < b.radius * 10)
+				{
+					b.temperature = 1000; // tidal forces stirr the mantel, floor is lava in the whole planet now
+				}
+			}
+			else
+			{
+				bool found = false;
+				for (auto& c : _collisions)
+				{
+					if (c.count(i) > 0 || c.count(j) > 0)
+					{
+						found = true;
+						c.insert(i);
+						c.insert(j);
+					}
+				}
+
+				if (!found)
+				{
+					_collisions.push_back(std::unordered_set{ i, j });
+				}
+			}
+		}
+
+		void iterate_collision_merges() noexcept
+		{
+			// This one is executed after all the worker threads has reported "done", so no concurrent access 
+			if (_collisions.empty())
+				return; 
+
+			std::vector<bool> idx_to_remove(_objects.size());
+
+			for (auto& c : _collisions)
+			{
+				vec3d mass_location{};
+				vec3d mass_velocity{};
+				vec3d mass_accel{}; // for p0 only
+
+				double total_mass{};
+
+				double total_vol_times_N{};
+
+				int dst_idx = *c.begin();
+				for (auto& idx : c)
+				{
+					if (idx != dst_idx)
+					{
+						idx_to_remove[idx] = true;
+					}
+
+					auto& o{ _objects[idx] };
+					mass_location += o.location * o.mass;
+					mass_velocity += o.velocity * o.mass;
+					mass_accel += o.acceleration * o.mass;
+
+					total_mass += o.mass;
+
+					total_vol_times_N += std::pow(o.radius, 3.0);
+				}
+
+				auto& dst{ _objects[dst_idx] };
+
+				dst.mass = total_mass;
+				dst.radius = std::pow(total_vol_times_N, 1.0 / 3.0);
+
+				dst.location = mass_location / total_mass;
+				dst.velocity = mass_velocity / total_mass;
+				dst.p0_velocity = dst.velocity;
+				dst.p0_acceleration = mass_accel / total_mass;
+				dst.temperature = 3000.0;
+			}
+
+			_collisions.clear();
+
+			for (int idx = static_cast<int>(_objects.size()) - 1; idx >= 0; idx--)
+			{
+				if (idx_to_remove[idx])
+				{
+					_objects.erase(_objects.begin() + idx);
+				}
+			}
+		}
 	
 	public:
-        void Iterate(long step)  noexcept
+        void Iterate(int64_t step)  noexcept
         {
             if (step == 0)
                 WorldInitialize();
@@ -148,6 +261,7 @@ namespace gravity
 				o.gravity_force = {0.0, 0.0, 0.0};
 			}
 
+			// Calculate the gravity forces between bodies 
 			if (false)
 			{
 				concurrency::parallel_for(
@@ -157,45 +271,10 @@ namespace gravity
 					{
 						auto& a{_objects[i]};
 
-						for (int j = 0; j < _objects.size(); ++j)
+						for (int j = 0; j < i; ++j)
 						{
-							if (i == j)
-								continue;
-
-							auto& b{ _objects[j] };
-
-							auto r_ba = b.location - a.location;
-							auto r_modulo = r_ba.modulo();
-
-							if (r_modulo > a.radius + b.radius)
-							{
-								auto F_ab = r_ba * (GRAVITATIONAL_CONSTANT * a.mass * b.mass / std::pow(r_modulo, 3.0));
-								a.gravity_force += F_ab;
-								//	b.gravity_force -= F_ab;
-							}
-							else
-							{
-								std::lock_guard<std::mutex> l(_collisions_mutex);
-
-								bool found = false;
-								for (auto& c : _collisions)
-								{
-									if (c.count(i) > 0 || c.count(j) > 0)
-									{
-										found = true;
-										c.insert(i);
-										c.insert(j);
-									}
-								}
-
-								if (!found)
-								{
-									_collisions.push_back(std::unordered_set{ i, j });
-								}
-							}
+							iterate_gravity_forces(i, j);
 						}
-
-						a.iterate(TIME_DELTA);
 					}					
 				);
 			}
@@ -205,99 +284,20 @@ namespace gravity
 				for (int i = 0; i < _objects.size(); ++i)
 				{
 					for (int j = 0; j < i; ++j)
-					{
-						if (j == i)
-							continue;
-
-						auto& a{ _objects[i] };
-						auto& b{ _objects[j] };
-
-						auto r_ba = b.location - a.location;
-						auto r_modulo = r_ba.modulo();
-
-						if (r_modulo > a.radius + b.radius)
-						{
-							auto F_ab = r_ba * (GRAVITATIONAL_CONSTANT * a.mass * b.mass / std::pow(r_modulo, 3.0));
-							a.gravity_force += F_ab;
-							b.gravity_force -= F_ab;
-						}
-						else
-						{
-							bool found = false;
-							for (auto& c : _collisions)
-							{
-								if (c.count(i) > 0 || c.count(j) > 0)
-								{
-									found = true;
-									c.insert(i);
-									c.insert(j);
-								}
-							}
-
-							if (!found)
-							{
-								_collisions.push_back(std::unordered_set{ i, j });
-							}
-						}
+					{						
+						iterate_gravity_forces(i, j);
 					}
-				}
-
-				for (auto& o : _objects)
-				{
-					o.iterate(TIME_DELTA);
 				}
 			}
 
-			if (!_collisions.empty())
+			// Apply the forces into accelerations & movements 
+			for (auto& o : _objects)
 			{
-				std::vector<bool> idx_to_remove( _objects.size() );
-
-				for (auto& c : _collisions)
-				{
-					vec3d mass_location{};
-					vec3d mass_velocity{};
-					vec3d mass_accel{}; // for p0 only
-
-					double total_mass{};
-
-					int dst_idx = *c.begin();
-					for (auto& idx : c)
-					{
-						if (idx != dst_idx)
-						{
-							idx_to_remove[idx] = true;
-						}
-
-						auto& o{ _objects[idx] };
-						mass_location += o.location * o.mass;
-						mass_velocity += o.velocity * o.mass;
-						mass_accel += o.acceleration * o.mass;
-
-						total_mass += o.mass;
-					}
-
-					auto& dst{ _objects[dst_idx]};
-
-					dst.mass = total_mass;
-					dst.radius = std::pow(total_mass, 1.0 / 3.0) * 0.1;
-
-					dst.location = mass_location / total_mass;
-					dst.velocity = mass_velocity / total_mass;
-					dst.p0_velocity = dst.velocity;
-					dst.p0_acceleration = mass_accel / total_mass;
-					dst.temperature = 3000.0;
-				}
-
-				_collisions.clear();
-
-				for (int idx = _objects.size() - 1; idx >= 0; idx--)
-				{
-					if (idx_to_remove[idx])
-					{
-						_objects.erase(_objects.begin() + idx);
-					}
-				}
+				o.iterate(TIME_DELTA);
 			}
+
+			// Do the mergers if there are any collisions 
+			iterate_collision_merges();
         }
 
 	private:

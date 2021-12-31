@@ -19,7 +19,7 @@ public:
 	virtual ~BmpLogger();
 
 	void onViewportResize(int widht, int height) override;
-	void onNewFrame(uint64_t seq) override;
+	void onNewFrame() override;
 
 };
 

@@ -43,16 +43,16 @@ const T& ValueCap(const T& val, const  T& min, const T& max)  noexcept
 }
 
 
-float InterlockedCompareExchange(float volatile * _Destination, float _Exchange, float _Comparand)  noexcept
-{
-    static_assert(sizeof(float) == sizeof(long),
-        "InterlockedCompareExchange(float*,float,float): expect float to be same size as long");
-
-    auto res = ::_InterlockedCompareExchange(
-        reinterpret_cast<volatile long*>(_Destination),
-        *reinterpret_cast<long*>(&_Exchange),
-        *reinterpret_cast<long*>(&_Comparand)
-    );
-
-    return *reinterpret_cast<float*>(&res);
-}
+//float InterlockedCompareExchange(float volatile * _Destination, float _Exchange, float _Comparand)  noexcept
+//{
+//    static_assert(sizeof(float) == sizeof(long),
+//        "InterlockedCompareExchange(float*,float,float): expect float to be same size as long");
+//
+//    auto res = ::_InterlockedCompareExchange(
+//        reinterpret_cast<volatile long*>(_Destination),
+//        *reinterpret_cast<long*>(&_Exchange),
+//        *reinterpret_cast<long*>(&_Comparand)
+//    );
+//
+//    return *reinterpret_cast<float*>(&res);
+//}

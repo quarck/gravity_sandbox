@@ -98,9 +98,9 @@ namespace gravity
         void CalcThread()
         {
             auto lastUIUpdate = std::chrono::high_resolution_clock::now();
-			long lastUpdateAt = 0;
+			int64_t last_update_at{ 0 };
 
-            for (viewDetails.currentIteration = 0; !terminate; ++viewDetails.currentIteration)
+            for (int64_t currentIteration = 0; !terminate; ++currentIteration)
             {
 				while (appPaused && !terminate)
 				{
@@ -115,17 +115,16 @@ namespace gravity
 					}
 				}
 
-				if (viewDetails.currentIteration % 4096 == 0)
+				if (currentIteration % 4096 == 0)
 				{
 					auto now = std::chrono::high_resolution_clock::now();
 					std::chrono::duration<double> sinceLastUpdate = std::chrono::duration_cast<std::chrono::duration<double>>(now - lastUIUpdate);
 
 					if (sinceLastUpdate.count() > 1.0 / 30.0)
-					{
-						viewDetails.iterationsPerSecond = static_cast<long>((viewDetails.currentIteration - lastUpdateAt) / sinceLastUpdate.count());
-
+					{						
+						viewDetails.timeRate = world.TIME_DELTA * (currentIteration - last_update_at) / static_cast<double>(sinceLastUpdate.count()); // seconds per second 
 						lastUIUpdate = now;
-						lastUpdateAt = viewDetails.currentIteration;
+						last_update_at = currentIteration;
 
 						uiNeedsUpdate = true;
 						::SendMessage(hWND, WM_USER, 0, 0);
@@ -139,7 +138,8 @@ namespace gravity
                 }
 
                 std::lock_guard<std::mutex> l(worldLock);
-                world.Iterate(viewDetails.currentIteration);
+                world.Iterate(currentIteration);
+				viewDetails.secondsEmulated = static_cast<int64_t>(static_cast<double>(currentIteration) * world.TIME_DELTA);
             }
         }
 
@@ -237,7 +237,7 @@ namespace gravity
 
 			if (_imageLogger && recording && !appPaused)
 			{
-				_imageLogger->onNewFrame(viewDetails.currentIteration);
+				_imageLogger->onNewFrame();
 			}
         }
 

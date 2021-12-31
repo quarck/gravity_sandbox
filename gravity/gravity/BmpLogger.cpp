@@ -108,7 +108,7 @@ void BmpLogger::onViewportResize(int width, int height)
 	_pixels.resize(width * height * 4);
 }
 
-void BmpLogger::onNewFrame(uint64_t seq)
+void BmpLogger::onNewFrame()
 {
 	// Capture the actual pixels 
 	glReadPixels(0, 0, _vpWidth, _vpHeight, GL_RGBA, GL_UNSIGNED_BYTE, &_pixels[0]);
