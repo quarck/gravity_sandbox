@@ -56,6 +56,8 @@ namespace gravity
 
 	private:
         std::vector<mass_body> _objects;
+		std::vector<vec3d> _gravity_field;
+
 		std::list<std::unordered_set<int>> _collisions;
 		std::mutex _collisions_mutex;
 
@@ -124,7 +126,19 @@ namespace gravity
 			sun.mass = SUN_MASS; // kg
 			sun.radius = SUN_RADIUS; // m
 			sun.temperature = 10000000;
+
+			//mass_body neutron_star{};
+			//neutron_star.mass = SUN_MASS / 2.0;
+			//neutron_star.radius = EARTH_RADIUS / 1000;
+			//neutron_star.temperature = 1000000;
+			//neutron_star.location.x() = SUN_RADIUS * 10;
+			//neutron_star.velocity.y() = orbital_velocity(sun.mass, neutron_star.location.x());
+
+
+			//sun.velocity.y() = -neutron_star.velocity.y() * (neutron_star.mass / sun.mass);
+
 			_objects.push_back(sun);
+			//_objects.push_back(neutron_star);
 
 			//mass_body jupyter{};
 			//jupyter.mass = JUPYTER_MASS; // kg
@@ -144,7 +158,7 @@ namespace gravity
 			//_objects.push_back(dupyter);
 
 
-			double sun_mass_adjusted = sun.mass;
+			double sun_mass_adjusted = sun.mass;// +neutron_star.mass;
 
 			sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 20, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 0.85, -1.0);
 			sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 24, EARTH_MASS, EARTH_RADIUS, ONE_A_U, 1.0);
@@ -161,6 +175,7 @@ namespace gravity
 			//impactor.velocity.y() = 0; // m/s
 			//_objects.push_back(impactor);
 
+			_gravity_field.resize(_objects.size() * _objects.size());
 		}
 
         const std::vector<mass_body>& get_objects() noexcept
@@ -211,6 +226,8 @@ namespace gravity
 			}
 		}
 
+
+
 		void iterate_gravity_forces(int i, int j) noexcept
 		{
 			if (i == j)
@@ -225,8 +242,20 @@ namespace gravity
 			if (r_modulo > a.radius + b.radius)
 			{
 				auto F_ab = r_ba * (GRAVITATIONAL_CONSTANT * a.mass * b.mass / std::pow(r_modulo, 3.0));
-				a.gravity_force += F_ab;
-				b.gravity_force -= F_ab;
+
+				{
+					auto y = F_ab - a.gravity_force_compensation;
+					auto t = a.gravity_force + y;
+					a.gravity_force_compensation = (t - a.gravity_force) - y;
+					a.gravity_force = t;
+				}
+
+				{
+					auto y = (-1.0)*F_ab - b.gravity_force_compensation;
+					auto t = b.gravity_force + y;
+					b.gravity_force_compensation = (t - b.gravity_force) - y;
+					b.gravity_force = t;
+				}
 
 				if (r_modulo < a.radius * 10)
 				{
@@ -242,7 +271,7 @@ namespace gravity
 			{
 				register_collisions(i, j);
 			}
-		}
+		}		
 
 		void iterate_collision_merges() noexcept
 		{
@@ -323,8 +352,26 @@ namespace gravity
 		void iterate_moves() noexcept
 		{
 			// Apply the forces into accelerations & movements
-			for (auto& o: _objects)
+			for (int i = 0; i < _objects.size(); ++ i)
 			{
+				auto& o = _objects[i];
+				//auto* src = &_gravity_field[i * _objects.size()];
+
+				//vec3d sum = {};
+				//vec3d compensation = {};
+
+				//// Kahan summation algorithm
+				//for (int j = 0; j < _objects.size(); ++j)
+				//{
+				//	//sum += src[j];
+				//	//o.gravity_force += src[j];
+
+				//	auto y = src[j] - compensation;			// c is zero the first time around.
+				//	auto t = sum + y;						// Alas, sum is big, y small, so low-order digits of y are lost.
+				//	compensation = (t - sum) - y;           // (t - sum) cancels the high-order part of y; subtracting y recovers negative (low part of y)
+				//	sum = t;								// Algebraically, c should always be zero. Beware overly-aggressive optimizing compilers!
+				//}
+				//o.gravity_force = sum;
 				o.iterate(TIME_DELTA);
 			}
 

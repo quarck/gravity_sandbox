@@ -15,6 +15,10 @@ namespace gravity
 	{
 		vec3d location{};
 		vec3d velocity{};
+
+		vec3d location_compensation{};
+		vec3d velocity_compensation{};
+
 		vec3d spin_axis{};
 
 		double spin_rate{};
@@ -23,6 +27,8 @@ namespace gravity
 		double temperature{ 300 };
 
 		vec3d gravity_force{}; // current resulting total gravity vector after accounting for all the bodies in the system 
+		vec3d gravity_force_compensation{};
+
 		vec3d acceleration{}; // current acceleration, based on the current gravity force (and mass)
 
 		vec3d p0_acceleration{}; // acceleration at the previos step 
@@ -43,6 +49,32 @@ namespace gravity
 			location += (velocity + p0_velocity) / 2.0 * time_delta;
 		}
 
+		inline void iterate_linear_kahan(const double time_delta) noexcept
+		{
+			p0_acceleration = acceleration;
+			acceleration = gravity_force / mass;
+
+			p0_velocity = velocity;
+
+			{
+				auto input{ (acceleration + p0_acceleration) / 2.0 * time_delta  };
+
+				auto y = input - velocity_compensation;
+				auto t = velocity + y;						
+				velocity_compensation = (t - velocity) - y;
+				velocity = t;
+			}
+
+			{
+				auto input{ (velocity + p0_velocity) / 2.0 * time_delta };
+
+				auto y = input - location_compensation;
+				auto t = location + y;
+				location_compensation = (t - location) - y;
+				location = t;
+			}
+		}
+
 		inline void iterate_quadratic(const double time_delta) noexcept
 		{
 			p1_acceleration = p0_acceleration;
@@ -57,9 +89,38 @@ namespace gravity
 			location += (5*velocity + 8*p0_velocity - p1_velocity) / 12.0 * time_delta;
 		}
 
+		inline void iterate_quadratic_kahan(const double time_delta) noexcept
+		{
+			p1_acceleration = p0_acceleration;
+			p0_acceleration = acceleration;
+			acceleration = gravity_force / mass;
+
+			p1_velocity = p0_velocity;
+			p0_velocity = velocity;
+
+			{
+				auto input{ (5 * acceleration + 8 * p0_acceleration - p1_acceleration) / 12.0 * time_delta };
+
+				auto y = input - velocity_compensation;
+				auto t = velocity + y;
+				velocity_compensation = (t - velocity) - y;
+				velocity = t;
+			}
+
+			{
+				auto input{ (5 * velocity + 8 * p0_velocity - p1_velocity) / 12.0 * time_delta };
+
+				auto y = input - location_compensation;
+				auto t = location + y;
+				location_compensation = (t - location) - y;
+				location = t;
+			}
+
+		}
+
 		inline void iterate(const double time_delta) noexcept
 		{
-			return iterate_quadratic(time_delta);
+			return iterate_quadratic_kahan(time_delta);
 		}
 
 
