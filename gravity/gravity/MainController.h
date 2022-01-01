@@ -191,6 +191,7 @@ namespace gravity
 				break;
 			case ' ':
 				appPaused = !appPaused;
+				world.set_pause(appPaused);
 				break;
 
 			case '?':

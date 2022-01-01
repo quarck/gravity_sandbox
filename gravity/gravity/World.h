@@ -27,6 +27,8 @@
 
 #include "WorldObjects.h"
 
+#include "Log.h"
+
 namespace gravity
 { 
     class World
@@ -43,8 +45,6 @@ namespace gravity
 		static constexpr double EARTH_ORBITAL_VELOCITY{ 29.78e+3 }; // m/s
 
 	private:
-        int _numWorkerThreads;
-
         std::vector<mass_body> _objects;
 		std::list<std::unordered_set<int>> _collisions;
 		std::mutex _collisions_mutex;
@@ -54,16 +54,22 @@ namespace gravity
         std::string _workingFolder;
         bool _workingFolderCreated{ false };
 
-        //ThreadGrid _grid;
-
-		std::vector<std::thread> _runners;
 
 	public:
         World(const std::string& workingFolder, int nWorkerThreads)
             :  _workingFolder(workingFolder)
-            , _numWorkerThreads(nWorkerThreads)
-        {
-			
+        {	
+
+			init_planets();
+        }
+
+		~World()
+		{
+		}
+
+
+		void init_planets()
+		{
 			mass_body sun{};
 			sun.mass = 1.989e+30; // kg
 			sun.radius = 696340'000; // m
@@ -79,17 +85,26 @@ namespace gravity
 			_objects.push_back(jupyter);
 
 
-			for (int i = 0; i < 32; ++i)
+			//mass_body dupyter{};
+			//dupyter.mass = 1.898e+27; // kg
+			//dupyter.radius = 69911'000; // m
+			//dupyter.location.x = EARTH_SUN_DISTANCE; // m
+			//dupyter.velocity.y = EARTH_ORBITAL_VELOCITY; // m/s
+			//dupyter.temperature = 273;
+			//_objects.push_back(dupyter);
+
+
+			for (int i = 0; i < 26; ++i)
 			{
 				mass_body earth{};
 				earth.mass = 5.972e+24; // kg
 				earth.radius = 6500'000; // m
 				earth.temperature = 300; // K
 
-				double loc_angle = M_PI * 2.0 / 32 * i;
+				double loc_angle = M_PI * 2.0 / 26 * i;
 				double vec_angle = loc_angle + M_PI / 2.0;
 
-				earth.location.x = EARTH_SUN_DISTANCE * std::cos(loc_angle); 
+				earth.location.x = EARTH_SUN_DISTANCE * std::cos(loc_angle);
 				earth.location.y = EARTH_SUN_DISTANCE * std::sin(loc_angle);
 				earth.velocity.x = EARTH_ORBITAL_VELOCITY * std::cos(vec_angle);
 				earth.velocity.y = EARTH_ORBITAL_VELOCITY * std::sin(vec_angle);
@@ -104,17 +119,17 @@ namespace gravity
 				_objects.push_back(earth);
 			}
 
-			
-			//mass_body mini_earth{};
-			//mini_earth.mass = 5.972e+22; // kg
-			//mini_earth.radius = 3500'000; // m
-			//mini_earth.temperature = 300; // K
-			//mini_earth.location.x = 0; // m
-			//mini_earth.location.y = -247.1e+9;
-			//mini_earth.velocity.x = 14.78e+3;
-			//mini_earth.velocity.y = 0; // m/s
-			//_objects.push_back(mini_earth); 
-        }
+
+			mass_body mini_earth{};
+			mini_earth.mass = 5.972e+20; // kg  // 1/10000th of the earth mass 
+			mini_earth.radius = 3500'000; // m
+			mini_earth.temperature = 300; // K
+			mini_earth.location.x = 0; // m
+			mini_earth.location.y = -247.1e+9;
+			mini_earth.velocity.x = -14.78e+3 * 1.2993;
+			mini_earth.velocity.y = 0; // m/s
+			_objects.push_back(mini_earth); 
+		}
 
         const std::vector<mass_body>& get_objects() noexcept
         {
@@ -143,11 +158,32 @@ namespace gravity
             }
 		}
 
-		//
-		// caller must ensure i != j
-		//
+		void register_collisions(int i, int j)
+		{
+			std::lock_guard l{ _collisions_mutex };
+
+			bool found = false;
+			for (auto& c : _collisions)
+			{
+				if (c.count(i) > 0 || c.count(j) > 0)
+				{
+					found = true;
+					c.insert(i);
+					c.insert(j);
+				}
+			}
+
+			if (!found)
+			{
+				_collisions.push_back(std::unordered_set{ i, j });
+			}
+		}
+
 		void iterate_gravity_forces(int i, int j) noexcept
 		{
+			if (i == j)
+				return;
+
 			auto& a{ _objects[i] };
 			auto& b{ _objects[j] };
 
@@ -162,37 +198,24 @@ namespace gravity
 
 				if (r_modulo < a.radius * 10)
 				{
-					a.temperature = 1000; // tidal forces stirr the mantel, floor is lava in the whole planet now
+					a.temperature = std::max(a.temperature, 1000.0); // tidal forces stirr the mantel, floor is lava in the whole planet now
 				}
 
 				if (r_modulo < b.radius * 10)
 				{
-					b.temperature = 1000; // tidal forces stirr the mantel, floor is lava in the whole planet now
+					b.temperature = std::max(b.temperature, 1000.0); // tidal forces stirr the mantel, floor is lava in the whole planet now
 				}
 			}
 			else
 			{
-				bool found = false;
-				for (auto& c : _collisions)
-				{
-					if (c.count(i) > 0 || c.count(j) > 0)
-					{
-						found = true;
-						c.insert(i);
-						c.insert(j);
-					}
-				}
-
-				if (!found)
-				{
-					_collisions.push_back(std::unordered_set{ i, j });
-				}
+				register_collisions(i, j);
 			}
 		}
 
 		void iterate_collision_merges() noexcept
 		{
-			// This one is executed after all the worker threads has reported "done", so no concurrent access 
+			std::lock_guard l{ _collisions_mutex };
+
 			if (_collisions.empty())
 				return; 
 
@@ -249,54 +272,46 @@ namespace gravity
 			}
 		}
 	
+		void iterate_forces() noexcept
+		{
+			// Calculate inter-object gravities
+			for (int i = 0; i < _objects.size(); ++i)
+			{
+				for (int j = 0; j < i; ++j)
+				{
+					iterate_gravity_forces(i, j);
+				}
+			}
+		}
+
+		void iterate_moves() noexcept
+		{
+			// Apply the forces into accelerations & movements 
+			for (auto& o: _objects)
+			{
+				o.iterate(TIME_DELTA);
+			}
+		}
+
+		void set_pause(bool pause)
+		{
+
+		}
+	
 	public:
-        void Iterate(int64_t step)  noexcept
-        {
-            if (step == 0)
-                WorldInitialize();
+		void Iterate(int64_t step)  noexcept
+		{
+			if (step == 0)
+				WorldInitialize();
 
 			// Wipe the previous gravity calculations 
 			for (auto& o : _objects)
 			{
-				o.gravity_force = {0.0, 0.0, 0.0};
+				o.gravity_force = { 0.0, 0.0, 0.0 };
 			}
 
-			// Calculate the gravity forces between bodies 
-			if (false)
-			{
-				concurrency::parallel_for(
-					0,
-					static_cast<int>(_objects.size()),
-					[&](int i) 
-					{
-						auto& a{_objects[i]};
-
-						for (int j = 0; j < i; ++j)
-						{
-							iterate_gravity_forces(i, j);
-						}
-					}					
-				);
-			}
-			else
-			{
-				// Calculate inter-object gravities
-				for (int i = 0; i < _objects.size(); ++i)
-				{
-					for (int j = 0; j < i; ++j)
-					{						
-						iterate_gravity_forces(i, j);
-					}
-				}
-			}
-
-			// Apply the forces into accelerations & movements 
-			for (auto& o : _objects)
-			{
-				o.iterate(TIME_DELTA);
-			}
-
-			// Do the mergers if there are any collisions 
+			iterate_forces();
+			iterate_moves();
 			iterate_collision_merges();
         }
 
