@@ -83,6 +83,41 @@ namespace gravity
 			return std::sqrt(GRAVITATIONAL_CONSTANT * M / R);
 		}
 
+		double populate_orbit(
+			double sun_mass_adjusted,
+			int num_planets,
+			double mass,
+			double radius,
+			double orbit_radius,
+			double orbit_direction
+		)
+		{
+			double total_mass{ 0 };
+			for (int i = 0; i < num_planets; ++i)
+			{
+				mass_body planet{};
+				planet.mass = mass; // kg
+				planet.radius = radius; // m
+				planet.temperature = 300; // K
+
+				total_mass += planet.mass;
+
+				double loc_angle = M_PI * 2.0 / num_planets * i;
+				double vec_angle = loc_angle + M_PI / 2.0;
+
+				double V = orbital_velocity(sun_mass_adjusted, orbit_radius);
+
+				planet.location.x() = orbit_radius * std::cos(loc_angle);
+				planet.location.y() = orbit_radius * std::sin(loc_angle);
+				planet.velocity.x() = orbit_direction * V * std::cos(vec_angle);
+				planet.velocity.y() = orbit_direction * V * std::sin(vec_angle);
+
+				_objects.push_back(planet);
+			}
+
+			return total_mass;
+		}
+
 		void init_planets()
 		{
 			mass_body sun{};
@@ -109,162 +144,22 @@ namespace gravity
 			//_objects.push_back(dupyter);
 
 
-			if (true) 
-			{
-				for (int i = 0; i < 26; ++i)
-				{
-					mass_body earth{};
-					earth.mass = EARTH_MASS; // kg
-					earth.radius = EARTH_RADIUS; // m
-					earth.temperature = 300; // K
+			double sun_mass_adjusted = sun.mass;
 
-					double loc_angle = M_PI * 2.0 / 26 * i;
-					double vec_angle = loc_angle + M_PI / 2.0;
+			sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 20, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 0.85, -1.0);
+			sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 24, EARTH_MASS, EARTH_RADIUS, ONE_A_U, 1.0);
+			sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 28, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 1.15, -1.0);
+			sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 32, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 1.3, 1.0);
 
-					double orbit_radius{ ONE_A_U };
-
-					double V = orbital_velocity(sun.mass, orbit_radius);
-
-					earth.location.x() = orbit_radius * std::cos(loc_angle);
-					earth.location.y() = orbit_radius * std::sin(loc_angle);
-					earth.velocity.x() = V * std::cos(vec_angle);
-					earth.velocity.y() = V * std::sin(vec_angle);
-
-					//if (i < 1)
-					//{
-					//	earth.velocity.x *= 0.99;
-					//	earth.velocity.y *= 0.99;
-
-					//	earth.temperature = 1000; // K
-					//}
-					_objects.push_back(earth);
-				}
-
-				for (int i = 0; i < 26; ++i)
-				{
-					mass_body earth{};
-					earth.mass = EARTH_MASS; // kg
-					earth.radius = EARTH_RADIUS; // m
-					earth.temperature = 300; // K
-
-					double loc_angle = M_PI * 2.0 / 26 * i;
-					double vec_angle = loc_angle + M_PI / 2.0;
-
-					double orbit_radius{ ONE_A_U * 1.1 };
-
-					double V = orbital_velocity(sun.mass, orbit_radius);
-
-					earth.location.x() = orbit_radius * std::cos(loc_angle);
-					earth.location.y() = orbit_radius * std::sin(loc_angle);
-					earth.velocity.x() = -V * std::cos(vec_angle);
-					earth.velocity.y() = -V * std::sin(vec_angle);
-
-					//if (i < 1)
-					//{
-					//	earth.velocity.x *= 0.99;
-					//	earth.velocity.y *= 0.99;
-
-					//	earth.temperature = 1000; // K
-					//}
-					_objects.push_back(earth);
-				}
-
-				for (int i = 0; i < 26; ++i)
-				{
-					mass_body earth{};
-					earth.mass = EARTH_MASS; // kg
-					earth.radius = EARTH_RADIUS; // m
-					earth.temperature = 300; // K
-
-					double loc_angle = M_PI * 2.0 / 26 * i;
-					double vec_angle = loc_angle + M_PI / 2.0;
-
-					double orbit_radius{ ONE_A_U * 1.2 };
-
-					double V = orbital_velocity(sun.mass, orbit_radius);
-
-					earth.location.x() = orbit_radius * std::cos(loc_angle);
-					earth.location.y() = orbit_radius * std::sin(loc_angle);
-					earth.velocity.x() = V * std::cos(vec_angle);
-					earth.velocity.y() = V * std::sin(vec_angle);
-
-					//if (i < 1)
-					//{
-					//	earth.velocity.x *= 0.99;
-					//	earth.velocity.y *= 0.99;
-
-					//	earth.temperature = 1000; // K
-					//}
-					_objects.push_back(earth);
-				}
-
-				for (int i = 0; i < 26; ++i)
-				{
-					mass_body earth{};
-					earth.mass = EARTH_MASS; // kg
-					earth.radius = EARTH_RADIUS; // m
-					earth.temperature = 300; // K
-
-					double loc_angle = M_PI * 2.0 / 26 * i;
-					double vec_angle = loc_angle + M_PI / 2.0;
-
-					double orbit_radius{ ONE_A_U * 0.9 };
-
-					double V = orbital_velocity(sun.mass, orbit_radius);
-
-					earth.location.x() = orbit_radius * std::cos(loc_angle);
-					earth.location.y() = orbit_radius * std::sin(loc_angle);
-					earth.velocity.x() = -V * std::cos(vec_angle);
-					earth.velocity.y() = -V * std::sin(vec_angle);
-
-					//if (i < 1)
-					//{
-					//	earth.velocity.x *= 0.99;
-					//	earth.velocity.y *= 0.99;
-
-					//	earth.temperature = 1000; // K
-					//}
-					_objects.push_back(earth);
-				}
-
-				mass_body impactor{};
-				impactor.mass = EARTH_MASS / 10000; // kg 
-				impactor.radius = 3500'000; // m
-				impactor.temperature = 300; // K
-				impactor.location.x() = 0; // m
-				impactor.location.y() = -247.1e+9;
-				impactor.velocity.x() = -14.78e+3 * 1.291;
-				impactor.velocity.y() = 0; // m/s
-				_objects.push_back(impactor);
-			} 
-			else
-			{
-				mass_body earth{};
-				earth.mass = EARTH_MASS; // kg
-				earth.radius = EARTH_RADIUS; // m
-				earth.temperature = 300; // K
-
-				double loc_angle = M_PI / 2.0;
-				double vec_angle = loc_angle + M_PI / 2.0;
-
-				double orbit_radius{ ONE_A_U };
-
-				double V = orbital_velocity(sun.mass, orbit_radius);
-
-				earth.location.x() = orbit_radius * std::cos(loc_angle);
-				earth.location.y() = orbit_radius * std::sin(loc_angle);
-				earth.velocity.x() = V * std::cos(vec_angle);
-				earth.velocity.y() = V * std::sin(vec_angle);
-
-				//if (i < 1)
-				//{
-				//	earth.velocity.x *= 0.99;
-				//	earth.velocity.y *= 0.99;
-
-				//	earth.temperature = 1000; // K
-				//}
-				_objects.push_back(earth);
-			}
+			//mass_body impactor{};
+			//impactor.mass = EARTH_MASS / 10000; // kg 
+			//impactor.radius = 3500'000; // m
+			//impactor.temperature = 300; // K
+			//impactor.location.x() = 0; // m
+			//impactor.location.y() = -247.1e+9;
+			//impactor.velocity.x() = -14.78e+3 * 1.291;
+			//impactor.velocity.y() = 0; // m/s
+			//_objects.push_back(impactor);
 
 		}
 
@@ -368,6 +263,8 @@ namespace gravity
 
 				double total_vol_times_N{};
 
+				double max_temp{0};
+
 				int dst_idx = *c.begin();
 				for (auto& idx : c)
 				{
@@ -384,6 +281,8 @@ namespace gravity
 					total_mass += o.mass;
 
 					total_vol_times_N += std::pow(o.radius, 3.0);
+
+					max_temp = std::max(max_temp, o.temperature);
 				}
 
 				auto& dst{ _objects[dst_idx] };
@@ -395,7 +294,7 @@ namespace gravity
 				dst.velocity = mass_velocity / total_mass;
 				dst.p0_velocity = dst.velocity;
 				dst.p0_acceleration = mass_accel / total_mass;
-				dst.temperature = 3000.0;
+				dst.temperature = std::max(max_temp, 3000.0);
 			}
 
 			_collisions.clear();
@@ -423,11 +322,13 @@ namespace gravity
 
 		void iterate_moves() noexcept
 		{
-			// Apply the forces into accelerations & movements 
+			// Apply the forces into accelerations & movements
 			for (auto& o: _objects)
 			{
 				o.iterate(TIME_DELTA);
 			}
+
+			//concurrency::parallel_for_each(_objects.begin(), _objects.end(), [&](auto& o) { o.iterate(TIME_DELTA); });
 		}
 
 		void set_pause(bool pause)

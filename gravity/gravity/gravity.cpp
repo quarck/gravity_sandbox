@@ -324,7 +324,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hCurrentInst, _In_opt_ HINSTANCE hPreviousI
     controller = std::make_unique<TMainController>(config);
 
     controller->SetHWND(
-        CreateOpenGLWindow(_T("Neurolution Native"), 0, 0,
+        CreateOpenGLWindow(_T("Gravity Sandbox"), 0, 0,
 			gravity::props::ViewPortWidth, gravity::props::ViewPortHeight,
             PFD_TYPE_RGBA, PFD_DOUBLEBUFFER));
 

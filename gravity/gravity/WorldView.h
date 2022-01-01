@@ -66,7 +66,7 @@ namespace gravity
 
 		//Color _foodColor{ 192, 64, 64 };
 
-		int _zoom{ 8 };
+		int _zoom{ 4 };
 		
     public:
 
@@ -90,7 +90,7 @@ namespace gravity
 
 		void zoomReset()
 		{
-			_zoom = 8;
+			_zoom = 4;
 		}
 
 
