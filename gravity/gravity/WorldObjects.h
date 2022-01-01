@@ -26,9 +26,13 @@ namespace gravity
 		vec3d acceleration{}; // current acceleration, based on the current gravity force (and mass)
 
 		vec3d p0_acceleration{}; // acceleration at the previos step 
-		vec3d p0_velocity{}; // velocity at the previous step
+		vec3d p1_acceleration{}; // acceleration at the previos step 
 
-		void iterate(const double time_delta) noexcept 
+		vec3d p0_velocity{}; // velocity at the previous step
+		vec3d p1_velocity{}; // velocity at the previous step
+
+
+		inline void iterate_linear(const double time_delta) noexcept
 		{
 			p0_acceleration = acceleration;
 			acceleration = gravity_force / mass;
@@ -38,6 +42,26 @@ namespace gravity
 
 			location += (velocity + p0_velocity) / 2.0 * time_delta;
 		}
+
+		inline void iterate_quadratic(const double time_delta) noexcept
+		{
+			p1_acceleration = p0_acceleration;
+			p0_acceleration = acceleration;
+			acceleration = gravity_force / mass;
+
+			p1_velocity = p0_velocity;
+			p0_velocity = velocity;
+
+			velocity += (5*acceleration + 8*p0_acceleration - p1_acceleration) / 12.0 * time_delta;
+
+			location += (5*velocity + 8*p0_velocity - p1_velocity) / 12.0 * time_delta;
+		}
+
+		inline void iterate(const double time_delta) noexcept
+		{
+			return iterate_quadratic(time_delta);
+		}
+
 
 		void save_to(std::ostream & stream)
 		{

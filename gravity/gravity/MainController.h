@@ -115,7 +115,7 @@ namespace gravity
 					}
 				}
 
-				if (currentIteration % 4096 == 0)
+				if (currentIteration % 1024 == 0)
 				{
 					auto now = std::chrono::high_resolution_clock::now();
 					std::chrono::duration<double> sinceLastUpdate = std::chrono::duration_cast<std::chrono::duration<double>>(now - lastUIUpdate);
@@ -182,6 +182,21 @@ namespace gravity
 			recording = !recording && _imageLogger;
 		}
 
+		void onZoomInView()
+		{
+			_worldView.zoomIn();
+		}
+
+		void onZoomOutView()
+		{
+			_worldView.zoomOut();
+		}
+
+		void onZoomResetView()
+		{
+			_worldView.zoomReset();
+		}
+
 		void OnKeyboard(WPARAM wParam)
 		{
 			switch (wParam)
@@ -225,6 +240,18 @@ namespace gravity
 
 			case 't': case 'T': 
 				onToggleScreenRecording();
+				break;
+
+			case '+': case '=':
+				onZoomInView();
+				break;
+
+			case '-': case '_':
+				onZoomOutView();
+				break;
+
+			case '0': 
+				onZoomResetView();
 				break;
 			}
 		}

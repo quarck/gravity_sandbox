@@ -44,7 +44,7 @@ namespace gravity
 		static constexpr uint32_t VERDA_KOLORO = 0xff006f00u;
 		static constexpr uint32_t CFG_CLR_FOREGROUND = 0xff9f004fu;
 
-		static constexpr double LOCATION_SCALE{ 1.496e+11 * 16 / props::ViewPortWidth }; 
+		static constexpr double LOCATION_SCALE{ 1.496e+11 * 2 / props::ViewPortWidth }; 		
 		
 		TWorld& _world;
 
@@ -65,6 +65,8 @@ namespace gravity
 		glText::Label _pausedLabel{ LABELS_BACKGROUND, RUGA_KOLORO, "<< PAUSED >>" };
 
 		//Color _foodColor{ 192, 64, 64 };
+
+		int _zoom{ 8 };
 		
     public:
 
@@ -73,6 +75,24 @@ namespace gravity
         {
             Random rnd = Random();
 		}
+
+
+		void zoomIn()
+		{
+			if (_zoom > 1)
+				_zoom /= 2;
+		}
+
+		void zoomOut()
+		{
+			_zoom *= 2;
+		}
+
+		void zoomReset()
+		{
+			_zoom = 8;
+		}
+
 
 		void PrintControls(const WorldViewDetails& details) noexcept
 		{
@@ -113,7 +133,7 @@ namespace gravity
 				LABELS_BACKGROUND,
 				{ 
 					std::pair(VERDA_KOLORO, ostr.str()),
-					std::pair(CFG_CLR_FOREGROUND, rcfg.str()),
+					std::pair(CFG_CLR_FOREGROUND, ""), // rcfg.str()),
 				});
 			_iterAndCfgLabel.DrawAt(-1.0, 0.94);
 
@@ -125,8 +145,8 @@ namespace gravity
 		{
 			glPushMatrix();
 
-			auto scaled_x{ body.location.x / LOCATION_SCALE };
-			auto scaled_y{ body.location.y / LOCATION_SCALE };
+			auto scaled_x{ body.location.x / LOCATION_SCALE / _zoom };
+			auto scaled_y{ body.location.y / LOCATION_SCALE / _zoom };
 
 			glTranslatef(scaled_x, scaled_y, 0.0);
 			//glRotatef(
@@ -153,7 +173,7 @@ namespace gravity
 				glColor3f(0.2f, 0.4f, 1.0f);
 			}
 
-			float radius = static_cast<float>(body.radius / LOCATION_SCALE * 1000.0);
+			float radius = static_cast<float>(body.radius / LOCATION_SCALE / _zoom * 1000.0);
 			if (radius < 1)
 			{
 				radius = 1.0;
