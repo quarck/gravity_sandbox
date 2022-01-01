@@ -91,20 +91,23 @@ namespace gravity
 			double mass,
 			double radius,
 			double orbit_radius,
-			double orbit_direction
+			double orbit_direction, 
+			double mass_variation, 
+			double location_variation_rad
 		)
 		{
 			double total_mass{ 0 };
 			for (int i = 0; i < num_planets; ++i)
 			{
 				mass_body planet{};
-				planet.mass = mass; // kg
+
+				planet.mass = mass + _random.Next(-mass_variation/2.0, mass_variation/2.0); // kg
 				planet.radius = radius; // m
 				planet.temperature = 300; // K
 
 				total_mass += planet.mass;
 
-				double loc_angle = M_PI * 2.0 / num_planets * i;
+				double loc_angle = M_PI * 2.0 / num_planets * i + _random.Next(-location_variation_rad/2.0, location_variation_rad/2.0);
 				double vec_angle = loc_angle + M_PI / 2.0;
 
 				double V = orbital_velocity(sun_mass_adjusted, orbit_radius);
@@ -126,25 +129,13 @@ namespace gravity
 			sun.mass = SUN_MASS; // kg
 			sun.radius = SUN_RADIUS; // m
 			sun.temperature = 10000000;
-
-			//mass_body neutron_star{};
-			//neutron_star.mass = SUN_MASS / 2.0;
-			//neutron_star.radius = EARTH_RADIUS / 1000;
-			//neutron_star.temperature = 1000000;
-			//neutron_star.location.x() = SUN_RADIUS * 10;
-			//neutron_star.velocity.y() = orbital_velocity(sun.mass, neutron_star.location.x());
-
-
-			//sun.velocity.y() = -neutron_star.velocity.y() * (neutron_star.mass / sun.mass);
-
 			_objects.push_back(sun);
-			//_objects.push_back(neutron_star);
 
 			//mass_body jupyter{};
 			//jupyter.mass = JUPYTER_MASS; // kg
 			//jupyter.radius = JUPYTER_RADIUS; // m
-			//jupyter.location.x = JUPUTER_ORBIT_RADIUS; // m
-			//jupyter.velocity.y = orbital_velocity(sun.mass, JUPUTER_ORBIT_RADIUS);  // 13.06e+3; // m/s
+			//jupyter.location.x() = JUPUTER_ORBIT_RADIUS; // m
+			//jupyter.velocity.y() = orbital_velocity(sun.mass, JUPUTER_ORBIT_RADIUS);  // 13.06e+3; // m/s
 			//jupyter.temperature = 273;
 			//_objects.push_back(jupyter);
 
@@ -152,18 +143,21 @@ namespace gravity
 			//mass_body dupyter{};
 			//dupyter.mass = JUPYTER_MASS; // kg
 			//dupyter.radius = JUPYTER_RADIUS; // m
-			//dupyter.location.x = ONE_A_U; // m
-			//dupyter.velocity.y = orbital_velocity(sun.mass, ONE_A_U);
+			//dupyter.location.x() = ONE_A_U; // m
+			//dupyter.velocity.y() = orbital_velocity(sun.mass, ONE_A_U);
 			//dupyter.temperature = 273;
 			//_objects.push_back(dupyter);
 
 
 			double sun_mass_adjusted = sun.mass;// +neutron_star.mass;
 
-			sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 20, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 0.85, -1.0);
-			sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 24, EARTH_MASS, EARTH_RADIUS, ONE_A_U, 1.0);
-			sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 28, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 1.15, -1.0);
-			sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 32, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 1.3, 1.0);
+			auto mass_var = EARTH_MASS * 0.1;
+			auto loc_var = M_PI / 10000.0;
+
+			sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 20, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 0.85, -1.0, mass_var, loc_var);
+			sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 24, EARTH_MASS, EARTH_RADIUS, ONE_A_U, 1.0, mass_var, loc_var);
+			sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 28, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 1.15, -1.0, mass_var, loc_var);
+			sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 32, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 1.3, 1.0, mass_var, loc_var);
 
 			//mass_body impactor{};
 			//impactor.mass = EARTH_MASS / 10000; // kg 
