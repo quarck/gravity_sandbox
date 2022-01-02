@@ -17,7 +17,7 @@
 
 #include "Props.h"
 
-#include "BmpLogger.h"
+#include "PngLogger.h"
 
 #define MAX_LOADSTRING 100
 

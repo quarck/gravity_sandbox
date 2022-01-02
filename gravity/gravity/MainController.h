@@ -17,7 +17,7 @@
 #include "WorldView.h"
 #include "RuntimeConfig.h"
 #include "IImageLogger.h"
-#include "BmpLogger.h"
+#include "PngLogger.h"
 
 namespace gravity
 {
@@ -173,7 +173,7 @@ namespace gravity
 					size_t nc = ::wcstombs(mbsFolder, file, MAX_PATH * 4 - 1);
 					if (nc > 0 && nc < MAX_PATH * 4)
 					{
-						_imageLogger = std::make_unique<BmpLogger>(mbsFolder);
+						_imageLogger = std::make_unique<PngLogger>(mbsFolder);
 						_imageLogger->onViewportResize(_vpWidth, _vpHeight);
 					}
 				}

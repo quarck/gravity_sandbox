@@ -27,7 +27,7 @@ public:
 	}
 
 	template <typename ...Args>
-	static void log(int thread_id, Args&... args)
+	static void log(Args&... args)
 	{
 		if (_logfile == nullptr)
 			return;
@@ -43,7 +43,7 @@ public:
 				break;
 		}
 
-		fprintf(_logfile, "%03d: T+%llu: ", thread_id, static_cast<uint64_t>(since_start.count()));
+		fprintf(_logfile, "%03d: ", static_cast<uint64_t>(since_start.count()));
 		fprintf(_logfile, args...);
 		fprintf(_logfile, "\n");
 		fflush(_logfile);

@@ -163,7 +163,10 @@
     <ClInclude Include="Allocators.h" />
     <ClInclude Include="BmpLogger.h" />
     <ClInclude Include="glText.h" />
+    <ClInclude Include="lodepng.h" />
+    <ClInclude Include="lodepng_util.h" />
     <ClInclude Include="Log.h" />
+    <ClInclude Include="PngLogger.h" />
     <ClInclude Include="Props.h" />
     <ClInclude Include="RuntimeConfig.h" />
     <ClInclude Include="vec3d.h" />
@@ -183,6 +186,9 @@
   <ItemGroup>
     <ClCompile Include="BmpLogger.cpp" />
     <ClCompile Include="gravity.cpp" />
+    <ClCompile Include="lodepng.cpp" />
+    <ClCompile Include="lodepng_util.cpp" />
+    <ClCompile Include="PngLogger.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>

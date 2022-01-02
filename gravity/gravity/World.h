@@ -36,7 +36,7 @@ namespace gravity
 	public:
 		static constexpr double GRAVITATIONAL_CONSTANT = 6.67430e-11; // m*m*m/(kg*s*s)
 
-		static constexpr double TIME_DELTA{ 10 * 10 }; // seconds
+		static constexpr double TIME_DELTA{ 10 * 10.0 }; // seconds
 
 		static constexpr double SQRT_2 = 1.4142135623730950488016887242097f; // unfortunately std::sqrt is not a constexpr function
 
@@ -56,7 +56,6 @@ namespace gravity
 
 	private:
         std::vector<mass_body> _objects;
-		std::vector<vec3d> _gravity_field;
 
 		std::list<std::unordered_set<int>> _collisions;
 		std::mutex _collisions_mutex;
@@ -71,7 +70,6 @@ namespace gravity
         World(const std::string& workingFolder, int nWorkerThreads)
             :  _workingFolder(workingFolder)
         {	
-
 			init_planets();
         }
 
@@ -101,13 +99,13 @@ namespace gravity
 			{
 				mass_body planet{};
 
-				planet.mass = mass + _random.Next(-mass_variation/2.0, mass_variation/2.0); // kg
+				planet.mass = mass;// +_random.Next(-mass_variation / 2.0, mass_variation / 2.0); // kg
 				planet.radius = radius; // m
 				planet.temperature = 300; // K
 
 				total_mass += planet.mass;
 
-				double loc_angle = M_PI * 2.0 / num_planets * i + _random.Next(-location_variation_rad/2.0, location_variation_rad/2.0);
+				double loc_angle = M_PI * 2.0 / num_planets * i;// +_random.Next(-location_variation_rad / 2.0, location_variation_rad / 2.0);
 				double vec_angle = loc_angle + M_PI / 2.0;
 
 				double V = orbital_velocity(sun_mass_adjusted, orbit_radius);
@@ -154,22 +152,24 @@ namespace gravity
 			auto mass_var = EARTH_MASS * 0.1;
 			auto loc_var = M_PI / 10000.0;
 
-			sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 20, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 0.85, -1.0, mass_var, loc_var);
-			sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 24, EARTH_MASS, EARTH_RADIUS, ONE_A_U, 1.0, mass_var, loc_var);
-			sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 28, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 1.15, -1.0, mass_var, loc_var);
-			sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 32, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 1.3, 1.0, mass_var, loc_var);
+			sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 52, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 170.0 / 189.0, -1.0, mass_var, loc_var);
+			sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 52, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 185.0 / 189.0, 1.0, mass_var, loc_var);
+			sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 52, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 200.0 / 189.0, -1.0, mass_var, loc_var);
+			sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 52, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 216.0 / 189.0, 1.0, mass_var, loc_var);
+			sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 52, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 234.0 / 189.0, -1.0, mass_var, loc_var);
+			sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 52, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 254.0 / 189.0, 1.0, mass_var, loc_var);
+			sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 52, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 275.0 / 189.0, -1.0, mass_var, loc_var);
+			sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 52, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 298.0 / 189.0, 1.0, mass_var, loc_var);
 
-			//mass_body impactor{};
-			//impactor.mass = EARTH_MASS / 10000; // kg 
-			//impactor.radius = 3500'000; // m
-			//impactor.temperature = 300; // K
-			//impactor.location.x() = 0; // m
-			//impactor.location.y() = -247.1e+9;
-			//impactor.velocity.x() = -14.78e+3 * 1.291;
-			//impactor.velocity.y() = 0; // m/s
-			//_objects.push_back(impactor);
-
-			_gravity_field.resize(_objects.size() * _objects.size());
+			mass_body impactor{};
+			impactor.mass = EARTH_MASS / 50 / 50 / 50; // kg 1/50th of the size (130km in radius), 1/125000th of the mass 
+			impactor.radius = 3500'000; // m
+			impactor.temperature = 900; // K
+			impactor.location.x() = -3.5e+11; // hand picked to produce an impact on the first turn of the orbit
+			impactor.location.y() = 9.191e+10;
+			impactor.velocity.x() = 40e+3; // 40km/s
+			impactor.velocity.y() = 1e+3; // m/s
+			_objects.push_back(impactor);
 		}
 
         const std::vector<mass_body>& get_objects() noexcept
@@ -220,8 +220,6 @@ namespace gravity
 			}
 		}
 
-
-
 		void iterate_gravity_forces(int i, int j) noexcept
 		{
 			if (i == j)
@@ -265,7 +263,38 @@ namespace gravity
 			{
 				register_collisions(i, j);
 			}
-		}		
+		}
+
+		void iterate_gravity_forces_one_side(int i, int j) noexcept
+		{
+			if (i == j)
+				return;
+
+			auto& a{ _objects[i] };
+			auto& b{ _objects[j] };
+
+			auto r_ba = b.location - a.location;
+			auto r_modulo = r_ba.modulo();
+
+			if (r_modulo > a.radius + b.radius)
+			{
+				auto F_ab = r_ba * (GRAVITATIONAL_CONSTANT * a.mass * b.mass / std::pow(r_modulo, 3.0));
+
+				auto y = F_ab - a.gravity_force_compensation;
+				auto t = a.gravity_force + y;
+				a.gravity_force_compensation = (t - a.gravity_force) - y;
+				a.gravity_force = t;
+
+				if (r_modulo < a.radius * 10)
+				{
+					a.temperature = std::max(a.temperature, 1000.0); // tidal forces stirr the mantel, floor is lava in the whole planet now
+				}
+			}
+			else
+			{
+				register_collisions(i, j);
+			}
+		}
 
 		void iterate_collision_merges() noexcept
 		{
@@ -334,38 +363,35 @@ namespace gravity
 		void iterate_forces() noexcept
 		{
 			// Calculate inter-object gravities
-			for (int i = 0; i < _objects.size(); ++i)
+
+			if (_objects.size() < 300)
 			{
-				for (int j = 0; j < i; ++j)
+				for (int i = 0; i < _objects.size(); ++i)
 				{
-					iterate_gravity_forces(i, j);
+					for (int j = 0; j < i; ++j)
+					{
+						iterate_gravity_forces(i, j);
+					}
 				}
+			}
+			else
+			{
+				concurrency::parallel_for(0, static_cast<int>(_objects.size()),
+					[&](int i)
+					{
+						for (int j = 0; j < _objects.size(); ++j)
+						{
+							iterate_gravity_forces_one_side(i, j);
+						}
+					});
 			}
 		}
 
 		void iterate_moves() noexcept
 		{
 			// Apply the forces into accelerations & movements
-			for (int i = 0; i < _objects.size(); ++ i)
+			for (auto& o: _objects)
 			{
-				auto& o = _objects[i];
-				//auto* src = &_gravity_field[i * _objects.size()];
-
-				//vec3d sum = {};
-				//vec3d compensation = {};
-
-				//// Kahan summation algorithm
-				//for (int j = 0; j < _objects.size(); ++j)
-				//{
-				//	//sum += src[j];
-				//	//o.gravity_force += src[j];
-
-				//	auto y = src[j] - compensation;			// c is zero the first time around.
-				//	auto t = sum + y;						// Alas, sum is big, y small, so low-order digits of y are lost.
-				//	compensation = (t - sum) - y;           // (t - sum) cancels the high-order part of y; subtracting y recovers negative (low part of y)
-				//	sum = t;								// Algebraically, c should always be zero. Beware overly-aggressive optimizing compilers!
-				//}
-				//o.gravity_force = sum;
 				o.iterate(TIME_DELTA);
 			}
 

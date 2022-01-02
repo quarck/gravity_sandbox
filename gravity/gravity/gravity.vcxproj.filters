@@ -1,0 +1,55 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="BmpLogger.cpp" />
+    <ClCompile Include="gravity.cpp" />
+    <ClCompile Include="PngLogger.cpp" />
+    <ClCompile Include="stdafx.cpp" />
+    <ClCompile Include="lodepng.cpp">
+      <Filter>lodepng</Filter>
+    </ClCompile>
+    <ClCompile Include="lodepng_util.cpp">
+      <Filter>lodepng</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Allocators.h" />
+    <ClInclude Include="BmpLogger.h" />
+    <ClInclude Include="glText.h" />
+    <ClInclude Include="Log.h" />
+    <ClInclude Include="PngLogger.h" />
+    <ClInclude Include="Props.h" />
+    <ClInclude Include="RuntimeConfig.h" />
+    <ClInclude Include="vec3d.h" />
+    <ClInclude Include="WorldObjects.h" />
+    <ClInclude Include="ThreadGrid.h" />
+    <ClInclude Include="Utils.h" />
+    <ClInclude Include="MainController.h" />
+    <ClInclude Include="World.h" />
+    <ClInclude Include="WorldView.h" />
+    <ClInclude Include="gravity.h" />
+    <ClInclude Include="Random.h" />
+    <ClInclude Include="Resource.h" />
+    <ClInclude Include="stdafx.h" />
+    <ClInclude Include="targetver.h" />
+    <ClInclude Include="IImageLogger.h" />
+    <ClInclude Include="lodepng.h">
+      <Filter>lodepng</Filter>
+    </ClInclude>
+    <ClInclude Include="lodepng_util.h">
+      <Filter>lodepng</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="gravity.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="gravity.ico" />
+    <Image Include="small.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="lodepng">
+      <UniqueIdentifier>{fc6b8e25-8d8e-49c9-966c-f1bc2473ce0d}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
