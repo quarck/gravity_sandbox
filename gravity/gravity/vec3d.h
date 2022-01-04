@@ -63,26 +63,12 @@ namespace gravity
 
 		void save_to(std::ostream& stream) const
 		{
-			double lx = x();
-			double ly = y();
-			double lz = z();
-
-			stream.write(reinterpret_cast<const char*>(&lx), sizeof(lx));
-			stream.write(reinterpret_cast<const char*>(&ly), sizeof(ly));
-			stream.write(reinterpret_cast<const char*>(&lz), sizeof(lz));
+			stream.write(reinterpret_cast<const char*>(&v), sizeof(v));
 		}
 
 		void load_from(std::istream& stream)
 		{
-			double lx{}, ly{}, lz{};
-
-			stream.read(reinterpret_cast<char*>(&lx), sizeof(lx));
-			stream.read(reinterpret_cast<char*>(&ly), sizeof(ly));
-			stream.read(reinterpret_cast<char*>(&lz), sizeof(lz));
-
-			x() = lx;
-			y() = ly;
-			z() = lz;
+			stream.read(reinterpret_cast<char*>(&v), sizeof(v));
 		}
 
 		inline double modulo() const noexcept
@@ -94,6 +80,7 @@ namespace gravity
 
 		inline static vec3d cross(const vec3d& lhs, const vec3d& rhs) noexcept
 		{
+			// TODO: try to optimize this if you are ever going to use it.
 			return {
 				lhs.y() * rhs.z() - lhs.z() * rhs.y(),
 				lhs.z() * rhs.x() - lhs.x() * rhs.z(), 
@@ -110,19 +97,12 @@ namespace gravity
 		inline vec3d& operator-=(const vec3d& rhs) noexcept
 		{
 			v = _mm256_sub_pd(v, rhs.v);
-
-			//x() = x() - rhs.x();
-			//y() = y() - rhs.y();
-			//z() = z() - rhs.z();
 			return *this;
 		}
 
 		inline vec3d& operator+=(const vec3d& rhs) noexcept
 		{
 			v = _mm256_add_pd(v, rhs.v);
-			//x() = x() + rhs.x();
-			//y() = y() + rhs.y();
-			//z() = z() + rhs.z();
 			return *this;
 		}
 	};
@@ -141,20 +121,75 @@ namespace gravity
 	{
 		auto fmm = _mm256_set1_pd(f);
 		return { _mm256_mul_pd(lhs.v, fmm) };
-		//return { lhs.x() * f, lhs.y() * f, lhs.z() * f};
 	}
 
 	inline vec3d operator/(const vec3d& lhs, double f) noexcept
 	{
 		auto fmm = _mm256_set1_pd(f);
 		return { _mm256_div_pd(lhs.v, fmm) };
-		//return { lhs.x() / f, lhs.y() / f, lhs.z() / f };
 	}
 
 	inline vec3d operator*(double f, const vec3d& rhs) noexcept
 	{
 		auto fmm = _mm256_set1_pd(f);
 		return { _mm256_mul_pd(rhs.v, fmm) };
-		//return rhs * f;
+	}
+
+	//
+	// a wrapper for Kahan algorithm summation of vec3d objects
+	//
+	struct acc3d
+	{
+		vec3d value{};
+		vec3d compensation{};
+
+		acc3d()
+		{
+		}
+
+		acc3d(double x, double y, double z)
+			: value{ x, y, z }
+		{
+		}
+
+		inline acc3d& operator+=(const vec3d& input) noexcept
+		{
+			auto y = input - compensation;
+			auto t = value + y;
+			compensation = (t - value) - y;
+			value = t;
+			return *this;
+		}
+
+		inline acc3d& operator-=(const vec3d& input) noexcept
+		{
+			return this->operator+=((-1) * input);
+		}
+
+		void save_to(std::ostream& stream) const
+		{
+			value.save_to(stream);
+			compensation.save_to(stream);
+		}
+
+		void load_from(std::istream& stream)
+		{
+			value.load_from(stream);
+			compensation.load_from(stream);
+		}
+	};
+
+	inline acc3d operator+(const acc3d& acc, const vec3d& input) noexcept
+	{
+		acc3d ret{ acc };
+		ret += input;
+		return ret;
+	}
+
+	inline acc3d operator-(const acc3d& acc, const vec3d& input) noexcept
+	{
+		acc3d ret{ acc };
+		ret -= input;
+		return ret;
 	}
 }

@@ -39,6 +39,7 @@
     <ClInclude Include="lodepng_util.h">
       <Filter>lodepng</Filter>
     </ClInclude>
+    <ClInclude Include="WorldConsts.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="gravity.rc" />

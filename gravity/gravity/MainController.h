@@ -64,8 +64,8 @@ namespace gravity
 
         MainController(RuntimeConfig& cfg)
             : config(cfg)
-			, viewDetails { cfg.GetNumWorkerThreads(), true }
-			, world{ std::string(""), config.GetNumWorkerThreads() }
+			, viewDetails { 1, true }
+			, world{ }
 			, _worldView{ world }
         {
             //string documents = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
@@ -100,7 +100,7 @@ namespace gravity
             auto lastUIUpdate = std::chrono::high_resolution_clock::now();
 			int64_t last_update_at{ 0 };
 
-            for (int64_t currentIteration = 0; !terminate; ++currentIteration)
+            while(!terminate)
             {
 				while (appPaused && !terminate)
 				{
@@ -115,16 +115,16 @@ namespace gravity
 					}
 				}
 
-				if (currentIteration % 1024 == 0)
+				if (world.current_iteration() % 1024 == 0)
 				{
 					auto now = std::chrono::high_resolution_clock::now();
 					std::chrono::duration<double> sinceLastUpdate = std::chrono::duration_cast<std::chrono::duration<double>>(now - lastUIUpdate);
 
 					if (sinceLastUpdate.count() > 1.0 / 30.0)
 					{						
-						viewDetails.timeRate = world.TIME_DELTA * (currentIteration - last_update_at) / static_cast<double>(sinceLastUpdate.count()); // seconds per second 
+						viewDetails.timeRate = gravity::TIME_DELTA * (world.current_iteration() - last_update_at) / static_cast<double>(sinceLastUpdate.count()); // seconds per second 
 						lastUIUpdate = now;
-						last_update_at = currentIteration;
+						last_update_at = world.current_iteration();
 
 						uiNeedsUpdate = true;
 						::SendMessage(hWND, WM_USER, 0, 0);
@@ -138,8 +138,8 @@ namespace gravity
                 }
 
                 std::lock_guard<std::mutex> l(worldLock);
-                world.Iterate(currentIteration);
-				viewDetails.secondsEmulated = static_cast<int64_t>(static_cast<double>(currentIteration) * world.TIME_DELTA);
+                world.iterate();
+				viewDetails.secondsEmulated = static_cast<int64_t>(static_cast<double>(world.current_iteration()) * gravity::TIME_DELTA);
             }
         }
 
@@ -206,7 +206,6 @@ namespace gravity
 				break;
 			case ' ':
 				appPaused = !appPaused;
-				world.set_pause(appPaused);
 				break;
 
 			case '?':

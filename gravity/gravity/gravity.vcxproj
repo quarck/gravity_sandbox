@@ -170,6 +170,7 @@
     <ClInclude Include="Props.h" />
     <ClInclude Include="RuntimeConfig.h" />
     <ClInclude Include="vec3d.h" />
+    <ClInclude Include="WorldConsts.h" />
     <ClInclude Include="WorldObjects.h" />
     <ClInclude Include="ThreadGrid.h" />
     <ClInclude Include="Utils.h" />

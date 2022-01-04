@@ -145,8 +145,8 @@ namespace gravity
 		{
 			glPushMatrix();
 
-			auto scaled_x{ body.location.x() / LOCATION_SCALE / _zoom };
-			auto scaled_y{ body.location.y() / LOCATION_SCALE / _zoom };
+			auto scaled_x{ body.location.value.x() / LOCATION_SCALE / _zoom };
+			auto scaled_y{ body.location.value.y() / LOCATION_SCALE / _zoom };
 
 			glTranslatef(scaled_x, scaled_y, 0.0);
 			//glRotatef(
