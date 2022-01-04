@@ -135,6 +135,12 @@ namespace gravity
 		return { _mm256_mul_pd(rhs.v, fmm) };
 	}
 
+	inline vec3d operator-(const vec3d& lhs) noexcept
+	{
+		auto zero = _mm256_set1_pd(0.0);
+		return {_mm256_sub_pd(zero, lhs.v) };
+	}
+
 	//
 	// a wrapper for Kahan algorithm summation of vec3d objects
 	//
@@ -163,7 +169,7 @@ namespace gravity
 
 		inline acc3d& operator-=(const vec3d& input) noexcept
 		{
-			return this->operator+=((-1) * input);
+			return this->operator+=(-input);
 		}
 
 		void save_to(std::ostream& stream) const

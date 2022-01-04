@@ -234,7 +234,7 @@ namespace gravity
 				const auto& curr_a{ current_gen[i] };
 				auto& next_a{ next_gen[i] };
 
-				for (int j = 0; j < i; ++j)
+				for (int j = i+1; j < current_gen.size(); ++j)
 				{
 					const auto& curr_b{ current_gen[j] };
 					auto& next_b{ next_gen[j] };
@@ -247,7 +247,7 @@ namespace gravity
 						auto F_ab = r_ba * (GRAVITATIONAL_CONSTANT * curr_a.mass * curr_b.mass / std::pow(r_modulo, 3.0));
 
 						next_a.gravity_force += F_ab;
-						next_b.gravity_force -= F_ab;
+						next_b.gravity_force += -F_ab;
 
 						if (r_modulo < curr_a.radius * 10)
 						{
@@ -354,7 +354,7 @@ namespace gravity
 			const auto& curr_gen = _bodies_gens[c_idx];
 			auto& next_gen = _bodies_gens[n_idx];
 
-			if (curr_gen.size() < 300)
+			if (curr_gen.size() < 50)
 			{
 				iterate_gravity_forces_and_moves(prev_gen, curr_gen, next_gen);
 			}

@@ -128,24 +128,24 @@ namespace gravity
 			double d_odd = -1.0;
 			double d_evn = 1.0;
 
-			sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 52, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 170.0 / 189.0, d_odd, mass_var, loc_var);
-			sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 52, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 185.0 / 189.0, d_evn, mass_var, loc_var);
-			sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 52, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 200.0 / 189.0, d_odd, mass_var, loc_var);
-			sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 52, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 216.0 / 189.0, d_evn, mass_var, loc_var);
-			sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 52, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 234.0 / 189.0, d_odd, mass_var, loc_var);
-			sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 52, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 254.0 / 189.0, d_evn, mass_var, loc_var);
-			sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 52, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 275.0 / 189.0, d_odd, mass_var, loc_var);
-			sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 52, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 298.0 / 189.0, d_evn, mass_var, loc_var);
+			sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 25, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 170.0 / 189.0, d_odd, mass_var, loc_var);
+			//sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 52, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 185.0 / 189.0, d_evn, mass_var, loc_var);
+			//sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 52, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 200.0 / 189.0, d_odd, mass_var, loc_var);
+			//sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 52, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 216.0 / 189.0, d_evn, mass_var, loc_var);
+			//sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 52, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 234.0 / 189.0, d_odd, mass_var, loc_var);
+			//sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 52, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 254.0 / 189.0, d_evn, mass_var, loc_var);
+			//sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 52, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 275.0 / 189.0, d_odd, mass_var, loc_var);
+			//sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 52, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 298.0 / 189.0, d_evn, mass_var, loc_var);
 
-			mass_body impactor{};
-			impactor.mass = EARTH_MASS / 50 / 50 / 50; // kg 1/50th of the size (130km in radius), 1/125000th of the mass 
-			impactor.radius = 3500'000.0; // m
-			impactor.temperature = 900; // K
-			impactor.location.value.x() = -3.5e+11; // hand picked to produce an impact on the first turn of the orbit
-			impactor.location.value.y() = 9.191e+10;
-			impactor.velocity.value.x() = 40e+3; // 40km/s
-			impactor.velocity.value.y() = 1e+3; // m/s
-			_objects.register_body(impactor);
+			//mass_body impactor{};
+			//impactor.mass = EARTH_MASS / 50 / 50 / 50; // kg 1/50th of the size (130km in radius), 1/125000th of the mass 
+			//impactor.radius = 3500'000.0; // m
+			//impactor.temperature = 900; // K
+			//impactor.location.value.x() = -3.5e+11; // hand picked to produce an impact on the first turn of the orbit
+			//impactor.location.value.y() = 9.191e+10;
+			//impactor.velocity.value.x() = 40e+3; // 40km/s
+			//impactor.velocity.value.y() = 1e+3; // m/s
+			//_objects.register_body(impactor);
 		}
 
         const std::vector<mass_body>& get_objects() const noexcept
