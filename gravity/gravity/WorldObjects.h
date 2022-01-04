@@ -340,29 +340,29 @@ namespace gravity
 		inline void iterate_linear(const mass_body& prev, const mass_body& current, mass_body& next) noexcept
 		{
 			next.acceleration = next.gravity_force.value / next.mass;
-			next.velocity.value = current.velocity.value + (next.acceleration + current.acceleration) / 2.0 * TIME_DELTA;
-			next.location.value = current.location.value + (next.velocity.value + current.velocity.value) / 2.0 * TIME_DELTA;
+			next.velocity.value = current.velocity.value + (next.acceleration + current.acceleration) * (TIME_DELTA / 2.0);
+			next.location.value = current.location.value + (next.velocity.value + current.velocity.value) * (TIME_DELTA / 2.0);
 		}
 
 		inline void iterate_linear_kahan(const mass_body& prev, const mass_body& current, mass_body& next) noexcept
 		{
 			next.acceleration = next.gravity_force.value / next.mass;
-			next.velocity = current.velocity + (next.acceleration + current.acceleration) / 2.0 * TIME_DELTA;
-			next.location = current.location + (next.velocity.value + current.velocity.value) / 2.0 * TIME_DELTA;
+			next.velocity = current.velocity + (next.acceleration + current.acceleration) * (TIME_DELTA / 2.0);
+			next.location = current.location + (next.velocity.value + current.velocity.value) * (TIME_DELTA / 2.0);
 		}
 
 		inline void iterate_quadratic(const mass_body& prev, const mass_body& current, mass_body& next) noexcept
 		{
 			next.acceleration = next.gravity_force.value / next.mass;
-			next.velocity.value = current.velocity.value + (5 * next.acceleration + 8 * current.acceleration - prev.acceleration) / 12.0 * TIME_DELTA;
-			next.location.value = current.location.value + (5 * next.velocity.value + 8 * current.velocity.value - prev.velocity.value) / 12.0 * TIME_DELTA;
+			next.velocity.value = current.velocity.value + (5 * next.acceleration + 8 * current.acceleration - prev.acceleration) * (TIME_DELTA / 12.0);
+			next.location.value = current.location.value + (5 * next.velocity.value + 8 * current.velocity.value - prev.velocity.value) * ( TIME_DELTA / 12.0);
 		}
 
 		inline void iterate_quadratic_kahan(const mass_body& prev, const mass_body& current, mass_body& next) noexcept
 		{
 			next.acceleration = next.gravity_force.value / next.mass;
-			next.velocity = current.velocity + (5 * next.acceleration + 8 * current.acceleration - prev.acceleration) / 12.0 * TIME_DELTA;
-			next.location = current.location + (5 * next.velocity.value + 8 * current.velocity.value - prev.velocity.value) / 12.0 * TIME_DELTA;
+			next.velocity = current.velocity + (5 * next.acceleration + 8 * current.acceleration - prev.acceleration) * (TIME_DELTA / 12.0);
+			next.location = current.location + (5 * next.velocity.value + 8 * current.velocity.value - prev.velocity.value) * (TIME_DELTA / 12.0);
 		}
 
 		void iterate_move(const mass_body& prev, const mass_body& current, mass_body& next) noexcept
