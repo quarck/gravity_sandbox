@@ -26,42 +26,21 @@ namespace gravity
 	{
 		acc3d location{};
 		acc3d velocity{};
+		acc3d gravity_force{}; // current resulting total gravity vector after accounting for all the bodies in the system 
+		vec3d acceleration{}; // current acceleration, based on the current gravity force (and mass)
 
-		vec3d spin_axis{};
-
-		double spin_rate{};
 		double radius{};
 		double mass{ 1.0 };
 		double temperature{ 300 };
-
-		acc3d gravity_force{}; // current resulting total gravity vector after accounting for all the bodies in the system 
-
-		vec3d acceleration{}; // current acceleration, based on the current gravity force (and mass)
-
-		//vec3d p0_acceleration{}; // acceleration at the previos step 
-		//vec3d p1_acceleration{}; // acceleration at the previos step 
-
-		//vec3d p0_velocity{}; // velocity at the previous step
-		//vec3d p1_velocity{}; // velocity at the previous step
-
-
-		
-
 
 		void save_to(std::ostream & stream)
 		{
 			location.save_to(stream);
 			velocity.save_to(stream);
-			spin_axis.save_to(stream);
 
 			gravity_force.save_to(stream);
 			acceleration.save_to(stream);
-			//p0_acceleration.save_to(stream);
-			//p1_acceleration.save_to(stream);
-			//p0_velocity.save_to(stream);
-			//p1_velocity.save_to(stream);
 
-			stream.write(reinterpret_cast<const char*>(&spin_rate), sizeof(spin_rate));
 			stream.write(reinterpret_cast<const char*>(&radius), sizeof(radius));
 			stream.write(reinterpret_cast<const char*>(&mass), sizeof(mass));
 			stream.write(reinterpret_cast<const char*>(&temperature), sizeof(temperature));
@@ -71,16 +50,11 @@ namespace gravity
 		{
 			location.load_from(stream);
 			velocity.load_from(stream);
-			spin_axis.load_from(stream);
+			//spin_axis.load_from(stream);
 
 			gravity_force.load_from(stream);
 			acceleration.load_from(stream);
-			//p0_acceleration.load_from(stream);
-			//p1_acceleration.load_from(stream);
-			//p0_velocity.load_from(stream);
-			//p1_velocity.load_from(stream);
 
-			stream.read(reinterpret_cast<char*>(&spin_rate), sizeof(spin_rate));
 			stream.read(reinterpret_cast<char*>(&radius), sizeof(radius));
 			stream.read(reinterpret_cast<char*>(&mass), sizeof(mass));
 			stream.read(reinterpret_cast<char*>(&temperature), sizeof(temperature));
