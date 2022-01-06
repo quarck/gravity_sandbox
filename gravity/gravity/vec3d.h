@@ -144,21 +144,24 @@ namespace gravity
 	//
 	// a wrapper for Kahan algorithm summation of vec3d objects
 	//
-	struct acc3d
+	template <typename TValue>
+	struct acc
 	{
-		vec3d value{};
-		vec3d compensation{};
+		TValue value{};
+		TValue compensation{};
 
-		acc3d()
+		acc()
 		{
 		}
 
-		acc3d(double x, double y, double z)
-			: value{ x, y, z }
+		acc(const TValue& v)
+			: value{ v }
 		{
 		}
 
-		inline acc3d& operator+=(const vec3d& input) noexcept
+		acc(const acc<TValue>& a) = default;
+
+		inline acc<TValue>& operator+=(const TValue& input) noexcept
 		{
 			auto y = input - compensation;
 			auto t = value + y;
@@ -167,35 +170,44 @@ namespace gravity
 			return *this;
 		}
 
-		inline acc3d& operator-=(const vec3d& input) noexcept
-		{
-			return this->operator+=(-input);
-		}
-
-		void save_to(std::ostream& stream) const
-		{
-			value.save_to(stream);
-			compensation.save_to(stream);
-		}
-
-		void load_from(std::istream& stream)
-		{
-			value.load_from(stream);
-			compensation.load_from(stream);
-		}
 	};
 
-	inline acc3d operator+(const acc3d& acc, const vec3d& input) noexcept
+	template <typename TValue>
+	inline acc<TValue> operator+(const acc<TValue>& a, const TValue& input) noexcept
 	{
-		acc3d ret{ acc };
+		acc<TValue> ret{ a };
 		ret += input;
 		return ret;
 	}
 
-	inline acc3d operator-(const acc3d& acc, const vec3d& input) noexcept
+	struct acc3d : public acc<vec3d>
 	{
-		acc3d ret{ acc };
-		ret -= input;
+		acc3d(double x, double y, double z)
+		{
+			this->acc<vec3d>::value = { x, y, z };
+		}
+
+		acc3d() = default;
+
+		acc3d(const acc3d& other) = default;
+
+		void save_to(std::ostream& stream) const
+		{
+			this->acc<vec3d>::value.save_to(stream);
+			this->acc<vec3d>::compensation.save_to(stream);
+		}
+
+		void load_from(std::istream& stream)
+		{
+			this->acc<vec3d>::value.load_from(stream);
+			this->acc<vec3d>::compensation.load_from(stream);
+		}
+	};
+
+	inline acc3d operator+(const acc3d& a, const vec3d& input) noexcept
+	{
+		acc3d ret{ a };
+		ret += input;
 		return ret;
 	}
 }

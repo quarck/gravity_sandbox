@@ -153,12 +153,12 @@ namespace gravity
 
 			for (auto& collision : _collisions)
 			{
-				vec3d mass_location{};	// to calculate the resulting centre of mass 
-				vec3d mass_velocity{}; // to calculate the resulting momentum of motion 
+				acc3d mass_location{};	// to calculate the resulting centre of mass 
+				acc3d mass_velocity{}; // to calculate the resulting momentum of motion 
 
-				double total_mass{};
+				acc<double> total_mass{};
 
-				double total_vol_times_N{};
+				acc<double> total_vol_times_N{};
 
 				double max_temp{ 0 };
 
@@ -187,10 +187,10 @@ namespace gravity
 				auto& p0_dst{ prev0_gen[dst_idx] };
 				auto& p1_dst{ prev1_gen[dst_idx] };
 
-				c_dst.mass = total_mass;
-				c_dst.radius = std::pow(total_vol_times_N, 1.0 / 3.0);
-				c_dst.location.value = mass_location / total_mass;
-				c_dst.velocity.value = mass_velocity / total_mass;
+				c_dst.mass = total_mass.value;
+				c_dst.radius = std::pow(total_vol_times_N.value, 1.0 / 3.0);
+				c_dst.location.value = mass_location.value / total_mass.value;
+				c_dst.velocity.value = mass_velocity.value / total_mass.value;
 				c_dst.temperature = std::max(max_temp, 3000.0); // boiling planet's guts 
 
 				// TODO: add labels here for labelled objects
@@ -380,8 +380,39 @@ namespace gravity
 			for (auto& gen : _bodies_gens)
 			{
 				gen.push_back(body);
+			}			
+		}
+
+		// 
+		// Calculates the resulting speed of the centre of mass of the struct, and shifts into the frame of reference where
+		// centre of mass of the struct remains stationary. 
+		// also shifts the centre of the view to the centre of mass
+		//
+		void align_observers_frame_of_reference()
+		{
+			acc3d mass_velocity{};
+			acc3d mass_location{};	
+			acc<double> total_mass{};
+
+			for (auto& body : _bodies_gens[0])
+			{
+				mass_location += body.location.value * body.mass;
+				mass_velocity += body.velocity.value * body.mass;
+
+				total_mass += body.mass;
 			}
-			
+
+			auto& centre_of_mass = mass_location.value / total_mass.value;
+			auto& centre_of_mass_velocity = mass_velocity.value / total_mass.value;
+
+			for (auto& gen : _bodies_gens)
+			{
+				for (auto& body : gen)
+				{
+					body.location.value -= centre_of_mass;
+					body.velocity.value -= centre_of_mass_velocity;
+				}
+			}
 		}
 
 		const std::vector<mass_body>& get_bodies() const noexcept
@@ -393,6 +424,7 @@ namespace gravity
 		{
 			iterate_forces_and_moves();
 			iterate_collision_merges();
+			//align_observers_frame_of_reference();
 			_current_step++;
 		}
 
