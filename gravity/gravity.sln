@@ -10,11 +10,14 @@ EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
+		Release_avx|x64 = Release_avx|x64
 		Release_avx2|x64 = Release_avx2|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{E7A0D593-0907-43E2-A903-D22EE972A726}.Debug|x64.ActiveCfg = Debug|x64
 		{E7A0D593-0907-43E2-A903-D22EE972A726}.Debug|x64.Build.0 = Debug|x64
+		{E7A0D593-0907-43E2-A903-D22EE972A726}.Release_avx|x64.ActiveCfg = Release_avx|x64
+		{E7A0D593-0907-43E2-A903-D22EE972A726}.Release_avx|x64.Build.0 = Release_avx|x64
 		{E7A0D593-0907-43E2-A903-D22EE972A726}.Release_avx2|x64.ActiveCfg = Release_avx2|x64
 		{E7A0D593-0907-43E2-A903-D22EE972A726}.Release_avx2|x64.Build.0 = Release_avx2|x64
 	EndGlobalSection

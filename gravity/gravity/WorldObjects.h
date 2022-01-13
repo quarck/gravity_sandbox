@@ -15,6 +15,7 @@
 #include <ppl.h>
 
 #include "vec3d.h"
+#include "kahan.h"
 
 #include "WorldConsts.h"
 
@@ -27,10 +28,11 @@ namespace gravity
 		acc3d location{};
 		acc3d velocity{};
 		acc3d gravity_force{}; // current resulting total gravity vector after accounting for all the bodies in the system 
-		vec3d acceleration{}; // current acceleration, based on the current gravity force (and mass)
+		vec3d_pd acceleration{}; // current acceleration, based on the current gravity force (and mass)
 
 		double radius{};
 		double mass{ 1.0 };
+		double mass_sqrt_g{ 1.0 * std::sqrt(GRAVITATIONAL_CONSTANT) };
 		double temperature{ 300 };
 
 		void save_to(std::ostream & stream)
@@ -87,6 +89,8 @@ namespace gravity
 		std::mutex _collisions_mutex;
 
 		int64_t _current_step{ 0 };
+
+		ThreadGrid _grid{ 12 };
 
 	private: 
 
@@ -155,6 +159,7 @@ namespace gravity
 			{
 				acc3d mass_location{};	// to calculate the resulting centre of mass 
 				acc3d mass_velocity{}; // to calculate the resulting momentum of motion 
+				acc3d mass_acceleration{};
 
 				acc<double> total_mass{};
 
@@ -174,6 +179,7 @@ namespace gravity
 
 					mass_location  +=  body.location.value * body.mass;
 					mass_velocity  += body.velocity.value * body.mass;
+					mass_acceleration += body.acceleration * body.mass;
 
 					total_mass += body.mass;
 
@@ -191,6 +197,7 @@ namespace gravity
 				c_dst.radius = std::pow(total_vol_times_N.value, 1.0 / 3.0);
 				c_dst.location.value = mass_location.value / total_mass.value;
 				c_dst.velocity.value = mass_velocity.value / total_mass.value;
+				c_dst.acceleration = mass_acceleration.value / total_mass.value;
 				c_dst.temperature = std::max(max_temp, 3000.0); // boiling planet's guts 
 
 				// TODO: add labels here for labelled objects
@@ -213,7 +220,7 @@ namespace gravity
 			}
 		}
 
-		void iterate_gravity_forces_and_moves(
+		void iterate_gravity_forces(
 			const mass_bodies& prev_gen,
 			const mass_bodies& current_gen,
 			mass_bodies& next_gen
@@ -244,7 +251,7 @@ namespace gravity
 
 					if (r_modulo > curr_a.radius + curr_b.radius)
 					{
-						auto F_ab = r_ba * (GRAVITATIONAL_CONSTANT * curr_a.mass * curr_b.mass / std::pow(r_modulo, 3.0));
+						auto F_ab = r_ba * (curr_a.mass_sqrt_g * curr_b.mass_sqrt_g / std::pow(r_modulo, 3.0));
 
 						next_a.gravity_force += F_ab;
 						next_b.gravity_force += -F_ab;
@@ -264,51 +271,61 @@ namespace gravity
 						register_collisions(i, j);
 					}
 				}
+			}
 
-				iterate_move(prev_gen[i], curr_a, next_a);
+			for (int i = 0; i < current_gen.size(); ++i)
+			{
+				iterate_move(prev_gen[i], current_gen[i], next_gen[i]);
 			}
 		}
 
-		void iterate_gravity_forces_and_moves_mt(
+
+		bool values_are_close(double a, double b)
+		{
+			return std::abs(a - b) < 1e-10;
+		}
+
+		void iterate_gravity_forces_mt(
 			const mass_bodies& prev_gen,
 			const mass_bodies& current_gen, 
 			mass_bodies& next_gen,
-			int body_idx
+			int i
 		) noexcept
 		{
-			const auto& curr_a{ current_gen[body_idx] };
-			auto& next_a{ next_gen[body_idx] };
+			const auto& curr_a{ current_gen[i] };
+			auto& next_a{ next_gen[i] };
 
-			next_a.gravity_force = {};
+			next_a.gravity_force = { 0.0, 0.0, 0.0 };
 
 			for (int j = 0; j < current_gen.size(); ++j)
 			{
-				if (body_idx == j)
+				if (i == j)
+				{
 					continue;
+				}
 
 				const auto& curr_b{ current_gen[j] };
-				auto& next_b{ next_gen[j] };
 
 				auto r_ba = curr_b.location.value - curr_a.location.value;
 				auto r_modulo = r_ba.modulo();
 
-				if (r_modulo > curr_b.radius + curr_b.radius)
+				if (r_modulo > curr_a.radius + curr_b.radius)
 				{
-					auto F_ab = r_ba * (GRAVITATIONAL_CONSTANT * curr_a.mass * curr_b.mass / std::pow(r_modulo, 3.0));
+					auto F_ab = r_ba * (curr_a.mass_sqrt_g * curr_b.mass_sqrt_g / std::pow(r_modulo, 3.0));
 					next_a.gravity_force += F_ab;
 
-					if (r_modulo < curr_b.radius * 10)
+					if (r_modulo < curr_a.radius * 10)
 					{
 						next_a.temperature = std::max(curr_a.temperature, 1000.0); // tidal forces stirr the mantel, floor is lava in the whole planet now
 					}
 				}
 				else
 				{
-					register_collisions(body_idx, j);
+					register_collisions(i, j);
 				}
 			}
 
-			iterate_move(prev_gen[body_idx], curr_a, next_a);
+			iterate_move(prev_gen[i], curr_a, next_a);
 		}
 
 		inline void iterate_linear(const mass_body& prev, const mass_body& current, mass_body& next) noexcept
@@ -356,16 +373,17 @@ namespace gravity
 
 			if (curr_gen.size() < 50)
 			{
-				iterate_gravity_forces_and_moves(prev_gen, curr_gen, next_gen);
+				iterate_gravity_forces(prev_gen, curr_gen, next_gen);
 			}
 			else
 			{
 				concurrency::parallel_for(0, static_cast<int>(curr_gen.size()),
 					[&](int i)
 					{
-						iterate_gravity_forces_and_moves_mt(prev_gen, curr_gen, next_gen, i);
+						iterate_gravity_forces_mt(prev_gen, curr_gen, next_gen, i);
 					});
 			}
+
 		}
 
 	public: 
@@ -377,10 +395,12 @@ namespace gravity
 
 		void register_body(const mass_body& body)
 		{
+			auto body_copy{ body };
+			body_copy.mass_sqrt_g = body_copy.mass * std::sqrt(GRAVITATIONAL_CONSTANT);
 			for (auto& gen : _bodies_gens)
 			{
-				gen.push_back(body);
-			}			
+				gen.push_back(body_copy);
+			}
 		}
 
 		// 
@@ -395,7 +415,7 @@ namespace gravity
 			acc<double> total_mass{};
 
 			for (auto& body : _bodies_gens[0])
-			{
+			{				
 				mass_location += body.location.value * body.mass;
 				mass_velocity += body.velocity.value * body.mass;
 
@@ -424,7 +444,7 @@ namespace gravity
 		{
 			iterate_forces_and_moves();
 			iterate_collision_merges();
-			//align_observers_frame_of_reference();
+
 			_current_step++;
 		}
 

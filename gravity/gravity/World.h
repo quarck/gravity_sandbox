@@ -1,4 +1,8 @@
-﻿// TODO: ideas to try: 
+﻿// TODO: 
+
+// report periodically - the total kinetic + potential energy of the system in respect to the sun's frame of reference 
+
+// TODO: ideas to try: 
 // * caves 
 // * R-G-B games
 // * gravity 
@@ -58,11 +62,14 @@ namespace gravity
 			double orbit_radius,
 			double orbit_direction, 
 			double mass_variation, 
-			double location_variation_rad
+			double location_variation_rad, 
+			int num_subset = 0
 		)
 		{
+			auto up_to = num_subset > 0 ? num_subset : num_planets;
+
 			double total_mass{ 0 };
-			for (int i = 0; i < num_planets; ++i)
+			for (int i = 0; i < up_to; ++i)
 			{
 				mass_body planet{};
 
@@ -110,14 +117,15 @@ namespace gravity
 			//jupyter.temperature = 273;
 			//_objects.push_back(jupyter);
 
-
-			mass_body dupyter{};
-			dupyter.mass = JUPYTER_MASS*32; // kg
-			dupyter.radius = JUPYTER_RADIUS; // m
-			dupyter.location.value.x() = ONE_A_U * 185.0 / 189.0; // m
-			dupyter.velocity.value.y() = orbital_velocity(sun.mass, dupyter.location.value.x()) * 1.02;
-			dupyter.temperature = 273;
-			_objects.register_body(dupyter);
+			{
+				mass_body dupyter{};
+				dupyter.mass = JUPYTER_MASS * 32; // kg
+				dupyter.radius = JUPYTER_RADIUS; // m
+				dupyter.location.value.x() = ONE_A_U * 185.0 / 189.0; // m
+				dupyter.velocity.value.y() = orbital_velocity(sun.mass, dupyter.location.value.x()) * 1.000001;
+				dupyter.temperature = 273;
+				_objects.register_body(dupyter);
+			}
 
 
 			double sun_mass_adjusted = sun.mass;// +neutron_star.mass;
@@ -125,17 +133,17 @@ namespace gravity
 			auto mass_var = EARTH_MASS * 0.1;
 			auto loc_var = M_PI / 10000.0;
 
-			double d_odd = -1.0;
-			double d_evn = -1.0;
+			double d_odd = 1.0;
+			double d_evn = 1.0;
 
 			sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 52, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 170.0 / 189.0, d_odd, mass_var, loc_var);
 			sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 52, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 185.0 / 189.0, d_evn, mass_var, loc_var);
-			sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 52, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 200.0 / 189.0, d_odd, mass_var, loc_var);
-			sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 52, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 216.0 / 189.0, d_evn, mass_var, loc_var);
-			sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 52, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 234.0 / 189.0, d_odd, mass_var, loc_var);
-			//sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 52, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 254.0 / 189.0, d_evn, mass_var, loc_var);
-			//sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 52, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 275.0 / 189.0, d_odd, mass_var, loc_var);
-			//sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 52, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 298.0 / 189.0, d_evn, mass_var, loc_var);
+			//sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 52, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 200.0 / 189.0, d_odd, mass_var, loc_var);
+			//sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 52, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 216.0 / 189.0, d_evn, mass_var, loc_var);
+			//sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 52, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 234.0 / 189.0, d_odd, mass_var, loc_var);
+			////sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 52, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 254.0 / 189.0, d_evn, mass_var, loc_var);
+			////sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 52, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 275.0 / 189.0, d_odd, mass_var, loc_var);
+			////sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 52, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 298.0 / 189.0, d_evn, mass_var, loc_var);
 
 			//mass_body impactor{};
 			//impactor.mass = EARTH_MASS / 50 / 50 / 50; // kg 1/50th of the size (130km in radius), 1/125000th of the mass 

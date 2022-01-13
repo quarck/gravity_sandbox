@@ -40,6 +40,7 @@
       <Filter>lodepng</Filter>
     </ClInclude>
     <ClInclude Include="WorldConsts.h" />
+    <ClInclude Include="kahan.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="gravity.rc" />
