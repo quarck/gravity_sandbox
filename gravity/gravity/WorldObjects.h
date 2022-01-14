@@ -90,8 +90,6 @@ namespace gravity
 
 		int64_t _current_step{ 0 };
 
-		ThreadGrid _grid{ 12 };
-
 	private: 
 
 		mass_bodies& get_generation(int gen) noexcept
@@ -167,7 +165,7 @@ namespace gravity
 
 				double max_temp{ 0 };
 
-				int dst_idx = *collision.begin(); // whatever happened to be the first in the collisions set 
+				int dst_idx = *collision.begin();
 				for (auto& idx : collision)
 				{
 					if (idx != dst_idx)
@@ -194,6 +192,7 @@ namespace gravity
 				auto& p1_dst{ prev1_gen[dst_idx] };
 
 				c_dst.mass = total_mass.value;
+				c_dst.mass_sqrt_g = c_dst.mass * std::sqrt(GRAVITATIONAL_CONSTANT);
 				c_dst.radius = std::pow(total_vol_times_N.value, 1.0 / 3.0);
 				c_dst.location.value = mass_location.value / total_mass.value;
 				c_dst.velocity.value = mass_velocity.value / total_mass.value;
@@ -278,7 +277,6 @@ namespace gravity
 				iterate_move(prev_gen[i], current_gen[i], next_gen[i]);
 			}
 		}
-
 
 		bool values_are_close(double a, double b)
 		{
