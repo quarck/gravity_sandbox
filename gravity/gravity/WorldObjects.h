@@ -60,6 +60,8 @@ namespace gravity
 			stream.read(reinterpret_cast<char*>(&radius), sizeof(radius));
 			stream.read(reinterpret_cast<char*>(&mass), sizeof(mass));
 			stream.read(reinterpret_cast<char*>(&temperature), sizeof(temperature));
+
+			mass_sqrt_g = mass * std::sqrt(GRAVITATIONAL_CONSTANT);
 		}
 	};
 
@@ -218,6 +220,45 @@ namespace gravity
 				}
 			}
 		}
+
+		void check_for_escaped_bodies() noexcept
+		{
+			for (int i = 1; i < NUM_GENERATIONS; ++i)
+			{
+				if (this->_bodies_gens[0].size() != this->_bodies_gens[i].size())
+				{
+					on_bodies_vector_mismatch();
+				}
+			}
+
+			const auto num_bodies{ _bodies_gens[0].size() };
+
+			std::vector<bool> idx_to_remove(num_bodies);
+
+			auto& curr_gen = get_generation(0);
+
+			for (int i = 0; i < curr_gen.size(); ++ i)
+			{
+				const auto& b = curr_gen[i];
+
+				if (b.location.value.modulo() > DECLARE_ESCAPED_AT_DISTANCE)
+				{
+					idx_to_remove[i] = true;
+				}
+			}
+
+			for (int idx = static_cast<int>(num_bodies) - 1; idx >= 0; --idx)
+			{
+				if (idx_to_remove[idx])
+				{
+					for (auto& generation : _bodies_gens)
+					{
+						generation.erase(generation.begin() + idx);
+					}
+				}
+			}
+		}
+
 
 		void iterate_gravity_forces(
 			const mass_bodies& prev_gen,
@@ -442,6 +483,9 @@ namespace gravity
 		{
 			iterate_forces_and_moves();
 			iterate_collision_merges();
+
+			if (_current_step % (16 * 1024) == 0)
+				check_for_escaped_bodies();
 
 			_current_step++;
 		}

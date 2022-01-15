@@ -221,6 +221,10 @@ namespace gravity
 				onLoad();
 				break;
 
+			case 'c': case 'C': 
+				onAlignFrameOfRef();
+				break;
+
 			case 'r': case 'R': 
 				onResetWorld();
 				break;
@@ -381,6 +385,12 @@ namespace gravity
 					world.load_from(file);
 				}
 			}
+		}
+
+		void onAlignFrameOfRef()
+		{
+			std::lock_guard<std::mutex> l(worldLock);
+			world.align_observers_frame_of_reference();
 		}
 
 		void onResetWorld()

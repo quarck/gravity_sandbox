@@ -20,4 +20,7 @@ namespace gravity
 
 	static constexpr double JUPYTER_MASS{ 1.898e+27 };
 	static constexpr double JUPYTER_RADIUS{ 69911'000 };
+
+
+	static constexpr double DECLARE_ESCAPED_AT_DISTANCE{ 10000 * ONE_A_U };
 }

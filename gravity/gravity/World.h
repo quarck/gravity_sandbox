@@ -130,19 +130,28 @@ namespace gravity
 			double sun_mass_adjusted = sun.mass;// +neutron_star.mass;
 
 			auto mass_var = EARTH_MASS * 0.9;
-			auto loc_var = M_PI / 15.0;
+			auto loc_var = M_PI / 4.0;
 
 			double d_odd = 1.0;
 			double d_evn = 1.0;
 
-			sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 52, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 170.0 / 189.0, d_odd, mass_var, loc_var);
-			sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 52, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 185.0 / 189.0, d_evn, mass_var, loc_var);
-			sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 52, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 200.0 / 189.0, d_odd, mass_var, loc_var);
-			sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 52, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 216.0 / 189.0, d_evn, mass_var, loc_var);
-			sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 52, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 234.0 / 189.0, d_odd, mass_var, loc_var);
-			sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 52, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 254.0 / 189.0, d_evn, mass_var, loc_var);
-			sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 52, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 275.0 / 189.0, d_odd, mass_var, loc_var);
-			sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 52, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 298.0 / 189.0, d_evn, mass_var, loc_var);
+			//sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 52, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 170.0 / 189.0, d_odd, mass_var, loc_var);
+			//sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 52, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 185.0 / 189.0, d_evn, mass_var, loc_var);
+			//sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 52, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 200.0 / 189.0, d_odd, mass_var, loc_var);
+			//sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 52, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 216.0 / 189.0, d_evn, mass_var, loc_var);
+			//sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 52, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 234.0 / 189.0, d_odd, mass_var, loc_var);
+			//sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 52, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 254.0 / 189.0, d_evn, mass_var, loc_var);
+			//sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 52, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 275.0 / 189.0, d_odd, mass_var, loc_var);
+			//sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 52, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 298.0 / 189.0, d_evn, mass_var, loc_var);
+
+			sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 52-28, EARTH_MASS, EARTH_RADIUS, ONE_A_U *0.95, d_odd, mass_var, loc_var);
+			sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 52-18, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 0.97, d_evn, mass_var, loc_var);
+			sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 52-10, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 1.03, d_odd, mass_var, loc_var);
+			sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 52-4, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 1.05, d_evn, mass_var, loc_var);
+			sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 52+4, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 1.09, d_odd, mass_var, loc_var);
+			sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 52+10, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 1.12, d_evn, mass_var, loc_var);
+			sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 52+18, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 1.15, d_odd, mass_var, loc_var);
+			sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 52+28, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 1.2, d_evn, mass_var, loc_var);
 
 			//mass_body impactor{};
 			//impactor.mass = EARTH_MASS / 50 / 50 / 50; // kg 1/50th of the size (130km in radius), 1/125000th of the mass 
@@ -181,6 +190,11 @@ namespace gravity
 		int64_t current_iteration() const noexcept
 		{
 			return _objects.current_iteration();
+		}
+
+		void align_observers_frame_of_reference() noexcept
+		{
+			_objects.align_observers_frame_of_reference();
 		}
     };
 }
