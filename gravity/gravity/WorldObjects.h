@@ -14,12 +14,17 @@
 
 #include <ppl.h>
 
+#include <intrin.h>
+#pragma intrinsic(__rdtsc)
+
 #include "vec3d.h"
 #include "kahan.h"
 
 #include "WorldConsts.h"
 
 #include "ThreadGrid.h"
+
+
 
 namespace gravity
 {
@@ -92,6 +97,9 @@ namespace gravity
 
 		int64_t _current_step{ 0 };
 
+		uint64_t _mt_ticks_per_iter{ 1 };
+		uint64_t _st_ticks_per_iter{ 0 };
+
 	private: 
 
 		mass_bodies& get_generation(int gen) noexcept
@@ -131,13 +139,9 @@ namespace gravity
 			}
 		}
 
-		void iterate_collision_merges() noexcept
+
+		void check_generations_size_consistency()
 		{
-			std::lock_guard l{ _collisions_mutex };
-
-			if (_collisions.empty())
-				return;
-
 			for (int i = 1; i < NUM_GENERATIONS; ++i)
 			{
 				if (this->_bodies_gens[0].size() != this->_bodies_gens[i].size())
@@ -145,6 +149,35 @@ namespace gravity
 					on_bodies_vector_mismatch();
 				}
 			}
+		}
+
+		void remove_at(int idx)
+		{
+			for (auto& generation : _bodies_gens)
+			{
+				generation.erase(generation.begin() + idx);
+			}
+		}
+
+		void remove_at(std::vector<bool>& indexes)
+		{
+			for (int idx = static_cast<int>(_bodies_gens[0].size()) - 1; idx >= 0; --idx)
+			{
+				if (indexes[idx])
+				{
+					remove_at(idx);
+				}
+			}
+		}
+
+		void iterate_collision_merges() noexcept
+		{
+			std::lock_guard l{ _collisions_mutex };
+
+			if (_collisions.empty())
+				return;
+
+			check_generations_size_consistency();
 
 			const auto num_bodies{ _bodies_gens[0].size() };
 
@@ -159,7 +192,7 @@ namespace gravity
 			{
 				acc3d mass_location{};	// to calculate the resulting centre of mass 
 				acc3d mass_velocity{}; // to calculate the resulting momentum of motion 
-				acc3d mass_acceleration{};
+				acc3d force{};
 
 				acc<double> total_mass{};
 
@@ -179,12 +212,11 @@ namespace gravity
 
 					mass_location  +=  body.location.value * body.mass;
 					mass_velocity  += body.velocity.value * body.mass;
-					mass_acceleration += body.acceleration * body.mass;
+					force += body.acceleration * body.mass;
 
 					total_mass += body.mass;
 
 					total_vol_times_N += std::pow(body.radius, 3.0);
-
 					max_temp = std::max(max_temp, body.temperature);
 				}
 
@@ -198,7 +230,7 @@ namespace gravity
 				c_dst.radius = std::pow(total_vol_times_N.value, 1.0 / 3.0);
 				c_dst.location.value = mass_location.value / total_mass.value;
 				c_dst.velocity.value = mass_velocity.value / total_mass.value;
-				c_dst.acceleration = mass_acceleration.value / total_mass.value;
+				c_dst.acceleration = force.value / total_mass.value;
 				c_dst.temperature = std::max(max_temp, 3000.0); // boiling planet's guts 
 
 				// TODO: add labels here for labelled objects
@@ -208,28 +240,12 @@ namespace gravity
 			}
 
 			_collisions.clear();
-
-			for (int idx = static_cast<int>(num_bodies) - 1; idx >= 0; --idx)
-			{
-				if (idx_to_remove[idx])
-				{
-					for (auto& generation: _bodies_gens)
-					{
-						generation.erase(generation.begin() + idx);
-					}
-				}
-			}
+			remove_at(idx_to_remove);
 		}
 
 		void check_for_escaped_bodies() noexcept
 		{
-			for (int i = 1; i < NUM_GENERATIONS; ++i)
-			{
-				if (this->_bodies_gens[0].size() != this->_bodies_gens[i].size())
-				{
-					on_bodies_vector_mismatch();
-				}
-			}
+			check_generations_size_consistency();
 
 			const auto num_bodies{ _bodies_gens[0].size() };
 
@@ -247,16 +263,7 @@ namespace gravity
 				}
 			}
 
-			for (int idx = static_cast<int>(num_bodies) - 1; idx >= 0; --idx)
-			{
-				if (idx_to_remove[idx])
-				{
-					for (auto& generation : _bodies_gens)
-					{
-						generation.erase(generation.begin() + idx);
-					}
-				}
-			}
+			remove_at(idx_to_remove);
 		}
 
 
