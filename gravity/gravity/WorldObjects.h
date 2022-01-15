@@ -97,8 +97,11 @@ namespace gravity
 
 		int64_t _current_step{ 0 };
 
-		uint64_t _mt_ticks_per_iter{ 1 };
-		uint64_t _st_ticks_per_iter{ 0 };
+		uint64_t _mt_ticks_per_n_iter{ 1 };
+		uint64_t _st_ticks_per_n_iter{ 2 };
+
+		static constexpr uint64_t PERFORMANCE_PROFILING_CYCLE{ 8192 };
+		static constexpr uint32_t PERFORMANCE_PROFILING_N{ 8 };
 
 	private: 
 
@@ -416,10 +419,29 @@ namespace gravity
 			const auto& prev_gen = _bodies_gens[p_idx];
 			const auto& curr_gen = _bodies_gens[c_idx];
 			auto& next_gen = _bodies_gens[n_idx];
+			
+			bool use_mt = (_mt_ticks_per_n_iter < _st_ticks_per_n_iter);
 
-			if (curr_gen.size() < 50)
+			auto sub_iter{ _current_step % PERFORMANCE_PROFILING_CYCLE };
+			bool profiling_iter{ sub_iter < PERFORMANCE_PROFILING_N * 2 };
+
+			if (profiling_iter)
+			{
+				if (sub_iter == 0)
+				{
+					_st_ticks_per_n_iter = 0;
+					_mt_ticks_per_n_iter = 0;
+				}
+				use_mt = sub_iter < PERFORMANCE_PROFILING_N;
+			}			
+
+			uint64_t start = __rdtsc();
+			if (!use_mt)
 			{
 				iterate_gravity_forces(prev_gen, curr_gen, next_gen);
+
+				if (profiling_iter)
+					_st_ticks_per_n_iter += __rdtsc() - start;
 			}
 			else
 			{
@@ -428,6 +450,9 @@ namespace gravity
 					{
 						iterate_gravity_forces_mt(prev_gen, curr_gen, next_gen, i);
 					});
+
+				if (profiling_iter)
+					_mt_ticks_per_n_iter += __rdtsc() - start;
 			}
 
 		}
