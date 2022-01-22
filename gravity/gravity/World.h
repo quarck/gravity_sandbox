@@ -42,7 +42,6 @@ namespace gravity
 	public:
         World()
         {	
-			init_planets();
         }
 
 		~World()
@@ -182,9 +181,9 @@ namespace gravity
 		}
 	
 	public:
-		void iterate()  noexcept
+		bool iterate()  noexcept
 		{
-			_objects.iterate();
+			return _objects.iterate();
         }
 
 		int64_t current_iteration() const noexcept
@@ -195,6 +194,35 @@ namespace gravity
 		void align_observers_frame_of_reference() noexcept
 		{
 			_objects.align_observers_frame_of_reference();
+		}
+
+		void set_time_delta(double time_delta)
+		{
+			_objects.set_time_delta(time_delta);
+		}
+
+		bool load_from_csv(std::string input_file)
+		{
+			if (!input_file.empty())
+				return _objects.load_from_csv(input_file);
+			else
+				init_planets();
+			return true;
+		}
+
+		void set_output_csv(std::string output_file)
+		{
+			_objects.set_output_csv(output_file);
+		}
+
+		void set_report_every(uint64_t report_every)
+		{
+			_objects.set_report_every(report_every);
+		}
+
+		void set_max_iterations(uint64_t max_iterations)
+		{
+			_objects.set_max_iterations(max_iterations);
 		}
     };
 }

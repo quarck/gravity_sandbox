@@ -2,11 +2,6 @@
 
 namespace gravity
 {
-	// Simulation step 
-	static constexpr double TIME_DELTA{ 10.0 * 10.0 }; // seconds
-//	static constexpr double TIME_DELTA{ 1 }; // seconds
-
-
 	static constexpr double GRAVITATIONAL_CONSTANT = 6.67430e-11; // m*m*m/(kg*s*s)
 
 	static constexpr double ONE_A_U{ 1.496e+11 }; // meters 

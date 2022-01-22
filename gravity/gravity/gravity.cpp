@@ -8,6 +8,7 @@
 #include "gravity.h"
 
 #include <atomic>
+#include <string>
 
 #include "RuntimeConfig.h"
 #include "WorldObjects.h"
@@ -18,6 +19,7 @@
 #include "Props.h"
 
 #include "PngLogger.h"
+
 
 #define MAX_LOADSTRING 100
 
@@ -33,8 +35,8 @@ void Init()
 
 void Reshape(int width, int height)
 {
-	if (controller)
-		controller->onViewportResize(width, height);
+    if (controller)
+        controller->onViewportResize(width, height);
     glViewport(0, 0, width, height);
     //glMatrixMode(GL_PROJECTION);
     //glLoadIdentity();
@@ -53,7 +55,7 @@ void Display(bool force)
         return;
 
     //	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    
+
     glClear(GL_COLOR_BUFFER_BIT);
 
     controller->DrawWorld();
@@ -67,7 +69,7 @@ void HandleKeyboard(WPARAM wParam)
     if (!controller)
         return;
 
-	controller->OnKeyboard(wParam);
+    controller->OnKeyboard(wParam);
 }
 
 LRESULT WINAPI WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -88,7 +90,7 @@ LRESULT WINAPI WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     case WM_SIZE:
         //glViewport(0, 0, LOWORD(lParam), HIWORD(lParam));
         //PostMessage(hWnd, WM_PAINT, 0, 0);
-		Reshape(LOWORD(lParam), HIWORD(lParam));
+        Reshape(LOWORD(lParam), HIWORD(lParam));
         PostMessage(hWnd, WM_PAINT, 0, 0);
         return 0;
 
@@ -146,7 +148,7 @@ LRESULT WINAPI WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     case WM_QUERYNEWPALETTE:
     {
         auto& hPalette = controller->GetHPalette();
-        auto &hDC = controller->GetHDC();
+        auto& hDC = controller->GetHDC();
         if (hPalette)
         {
             UnrealizeObject(hPalette);
@@ -247,7 +249,7 @@ HWND  CreateOpenGLWindow(const TCHAR* title, int x, int y, int width, int height
     {
         int n = 1 << pfd.cColorBits;
         if (n > 256) n = 256;
-        
+
         std::vector<unsigned char> lpPalMem(sizeof(LOGPALETTE) + sizeof(PALETTEENTRY) * n, 0);
 
         LOGPALETTE* lpPal = reinterpret_cast<LOGPALETTE*>(&lpPalMem[0]);
@@ -268,11 +270,11 @@ HWND  CreateOpenGLWindow(const TCHAR* title, int x, int y, int width, int height
             for (int i = 0; i < n; ++i)
             {
                 lpPal->palPalEntry[i].peRed =
-                    (((i >> pfd.cRedShift)   & redMask) * 255) / redMask;
+                    (((i >> pfd.cRedShift) & redMask) * 255) / redMask;
                 lpPal->palPalEntry[i].peGreen =
                     (((i >> pfd.cGreenShift) & greenMask) * 255) / greenMask;
                 lpPal->palPalEntry[i].peBlue =
-                    (((i >> pfd.cBlueShift)  & blueMask) * 255) / blueMask;
+                    (((i >> pfd.cBlueShift) & blueMask) * 255) / blueMask;
                 lpPal->palPalEntry[i].peFlags = 0;
             }
         }
@@ -314,18 +316,24 @@ HWND  CreateOpenGLWindow(const TCHAR* title, int x, int y, int width, int height
 
 int APIENTRY wWinMain(_In_ HINSTANCE hCurrentInst, _In_opt_ HINSTANCE hPreviousInst, _In_ LPWSTR lpszCmdLine, _In_ int nCmdShow)
 {
-    if (wcsstr(lpszCmdLine, L"-burn") == nullptr)
+    gravity::runtime_config config;
+    if (!config.parse_command_line(lpszCmdLine))
     {
-        ::SetPriorityClass(::GetCurrentProcess(), BELOW_NORMAL_PRIORITY_CLASS);
-    }
+        MessageBox(
+            NULL, 
+            L"The command line arguments passes are invalid. \r\nUsage:\r\n"
+            L"gravity.exe [--input <input_file.csv>] [--output <output.csv>] [--time-delta <time_delta_seconds>] [--report-every-n <N>] [--max-n <N>]",
+            L"Incorrect usage", 
+            MB_OK | MB_ICONHAND);
 
-    gravity::RuntimeConfig config;
+        return 0;
+    }
 
     controller = std::make_unique<TMainController>(config);
 
     controller->SetHWND(
         CreateOpenGLWindow(_T("Gravity Sandbox"), 0, 0,
-			gravity::props::ViewPortWidth, gravity::props::ViewPortHeight,
+            gravity::props::ViewPortWidth, gravity::props::ViewPortHeight,
             PFD_TYPE_RGBA, PFD_DOUBLEBUFFER));
 
     if (controller->GetHWND() == nullptr)

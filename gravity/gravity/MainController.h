@@ -29,7 +29,7 @@ namespace gravity
 		using TWorldView = WorldView<TWorld, TObject>;
 
 	private:
-		RuntimeConfig& config;
+		runtime_config& config;
 
         TWorld world;
         std::mutex worldLock;
@@ -62,7 +62,7 @@ namespace gravity
 
     public:
 
-        MainController(RuntimeConfig& cfg)
+        MainController(runtime_config& cfg)
             : config(cfg)
 			, viewDetails { 1, true }
 			, world{ }
@@ -87,6 +87,23 @@ namespace gravity
 
         void Start()
         {
+			world.set_time_delta(config.time_delta());
+			world.set_output_csv(config.output_file());
+			world.set_report_every(config.report_every_n());
+			world.set_max_iterations(config.max_n());
+
+			bool load_ok = world.load_from_csv(config.input_file());
+			if (!load_ok)
+			{
+				MessageBox(
+					NULL,
+					L"Failed to parse the input csv file",
+					L"Invalid input",
+					MB_OK | MB_ICONHAND);
+				terminate = true;
+				return;
+			}
+
             calcThread = std::thread(&MainController::CalcThread, this);
         }
 
@@ -99,6 +116,11 @@ namespace gravity
         {
             auto lastUIUpdate = std::chrono::high_resolution_clock::now();
 			int64_t last_update_at{ 0 };
+
+			if (config.auto_star())
+			{
+				appPaused = false;
+			}
 
             while(!terminate)
             {
@@ -122,7 +144,7 @@ namespace gravity
 
 					if (sinceLastUpdate.count() > 1.0 / 30.0)
 					{						
-						viewDetails.timeRate = gravity::TIME_DELTA * (world.current_iteration() - last_update_at) / static_cast<double>(sinceLastUpdate.count()); // seconds per second 
+						viewDetails.timeRate = config.time_delta() * (world.current_iteration() - last_update_at) / static_cast<double>(sinceLastUpdate.count()); // seconds per second 
 						lastUIUpdate = now;
 						last_update_at = world.current_iteration();
 
@@ -138,8 +160,13 @@ namespace gravity
                 }
 
                 std::lock_guard<std::mutex> l(worldLock);
-                world.iterate();
-				viewDetails.secondsEmulated = static_cast<int64_t>(static_cast<double>(world.current_iteration()) * gravity::TIME_DELTA);
+                
+				if (!world.iterate())
+				{
+					terminate = true;
+				}
+
+				viewDetails.secondsEmulated = static_cast<int64_t>(static_cast<double>(world.current_iteration()) * config.time_delta());
             }
         }
 
