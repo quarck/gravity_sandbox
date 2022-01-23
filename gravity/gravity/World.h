@@ -5,7 +5,7 @@
 // Particular query example to query Mars' (object 499) location relative to the Sun (@sun), using the 
 // Cartesian coordinates in International Celestial Reference Frame: 
 // 
-// https://ssd.jpl.nasa.gov/api/horizons.api?format=text&COMMAND='499'&OBJ_DATA='YES'&MAKE_EPHEM='YES'&EPHEM_TYPE='VECTORS'&CENTER='@sun'&START_TIME='2021-12-01'&STOP_TIME='2022-01-21'&STEP_SIZE='15%20d'&OUT_UNITS='KM-S'&REF_SYSTEM='ICRF'&VEC_TABLE='2'
+// https://ssd.jpl.nasa.gov/api/horizons.api?format=text&COMMAND='Webb'&OBJ_DATA='YES'&MAKE_EPHEM='YES'&EPHEM_TYPE='VECTORS'&CENTER='@sun'&START_TIME='2021-12-01'&STOP_TIME='2022-01-21'&STEP_SIZE='15%20d'&OUT_UNITS='KM-S'&REF_SYSTEM='ICRF'&VEC_TABLE='2'
 // 
 // Other bodies: 
 //  199  Mercury
@@ -31,6 +31,8 @@
 //      801 ..
 //  999  Pluto
 //      901 Charon
+//
+// Webb -- James Webb Space Telescope!! https://ssd.jpl.nasa.gov/api/horizons.api?format=text&COMMAND=%27Webb%27&OBJ_DATA=%27YES%27&MAKE_EPHEM=%27YES%27&EPHEM_TYPE=%27VECTORS%27&CENTER=%27@sun%27&START_TIME=%272021-12-26%27&STOP_TIME=%272022-02-15%27&STEP_SIZE=%271%20d%27&OUT_UNITS=%27KM-S%27&REF_SYSTEM=%27ICRF%27&VEC_TABLE=%272%27 
 
 
 // TODO: 
