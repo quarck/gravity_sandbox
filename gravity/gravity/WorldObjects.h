@@ -772,7 +772,7 @@ namespace gravity
 			for (int idx = 0; idx < current_gen.size(); ++idx)
 			{
 				auto& body = current_gen[idx];
-				auto line = body.to_csv_line(_current_iteration, idx, current_epoch_time);
+				auto line = body.to_csv_line(_current_iteration, current_epoch_time, idx);
 				ostrm << line << "\n";
 			}
 
