@@ -53,6 +53,11 @@ namespace gravity
 
         bool parse_command_line(LPWSTR lpszCmdLine)
         {
+            if (wcscmp(lpszCmdLine, L"") == 0)
+            {
+                return true;
+            }
+
             int argc;
             LPWSTR* argv = CommandLineToArgvW(lpszCmdLine, &argc);
 
