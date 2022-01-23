@@ -42,6 +42,14 @@ const T& ValueCap(const T& val, const  T& min, const T& max)  noexcept
     return min;
 }
 
+std::string ctime_to_utc_str(__time64_t epoch_time)
+{
+    std::array<char, 128> time_string;
+    struct tm tm;
+    _gmtime64_s(&tm, &epoch_time);
+    strftime(time_string.data(), time_string.size() - 1, "%Y-%m-%d %H:%M", &tm);
+    return { time_string.data() };
+}
 
 //float InterlockedCompareExchange(float volatile * _Destination, float _Exchange, float _Comparand)  noexcept
 //{

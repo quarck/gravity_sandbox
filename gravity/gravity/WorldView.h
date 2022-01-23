@@ -131,13 +131,7 @@ namespace gravity
 
 			std::ostringstream ostr;
 
-			std::array<char, 128> time_string;
-			__time64_t epoch_time = details.epochTimeUTCMillis / 1000;
-			struct tm tm;
-			_gmtime64_s(&tm, &epoch_time);
-			strftime( time_string.data(), time_string.size()-1, "%Y-%m-%d %H:%M", &tm);
-
-			ostr << time_string.data();
+			ostr << ctime_to_utc_str(details.epochTimeUTCMillis / 1000);
 			
 			ostr << ", R: " << static_cast<int64_t>(details.timeRate / 1000) << "k:1";
 
