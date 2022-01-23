@@ -166,7 +166,7 @@ namespace gravity
 					terminate = true;
 				}
 
-				viewDetails.secondsEmulated = static_cast<int64_t>(static_cast<double>(world.current_iteration()) * config.time_delta());
+				viewDetails.epochTimeUTCMillis = world.current_time_epoch_millis();
             }
         }
 

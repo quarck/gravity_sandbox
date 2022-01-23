@@ -19,14 +19,14 @@ namespace gravity
 	struct WorldViewDetails
 	{
 		int numActiveThreads;
-		int64_t secondsEmulated;
+		uint64_t epochTimeUTCMillis;
 		double timeRate; // seconds of emulated time per second of a real time 
 		bool showDetailedcontrols;
 		bool paused;
 
 		WorldViewDetails(int nThr, bool p) 
 			: numActiveThreads{ nThr }
-			, secondsEmulated{ 0 }
+			, epochTimeUTCMillis{ 0 }
 			, timeRate{ 0 }
 			, showDetailedcontrols { false }
 			, paused { p }
@@ -131,12 +131,13 @@ namespace gravity
 
 			std::ostringstream ostr;
 
-			int64_t seconds_emulated = details.secondsEmulated;
-			int64_t years = seconds_emulated / (365 * 24 * 3600);
-			seconds_emulated %= (365 * 24 * 3600);
-			int64_t days = seconds_emulated / (24 * 3600);
+			std::array<char, 128> time_string;
+			__time64_t epoch_time = details.epochTimeUTCMillis / 1000;
+			struct tm tm;
+			_gmtime64_s(&tm, &epoch_time);
+			strftime( time_string.data(), time_string.size()-1, "%Y-%m-%d %H:%M", &tm);
 
-			ostr << "Y: " << years << ", D:" << days;
+			ostr << time_string.data();
 			
 			ostr << ", R: " << static_cast<int64_t>(details.timeRate / 1000) << "k:1";
 
@@ -271,44 +272,6 @@ namespace gravity
 					DrawBody(b, vpx, vpy);
 				}
 			}
-
-            //for (auto& food : _world->GetFoods())
-            //{
-            //    if (food.EnergyValue < 0.01)
-            //        continue;
-
-            //    glPushMatrix();
-            //    glTranslatef(food.LocationX, food.LocationY, 0.0);
-            //    //glRotatef(cell->Rotation, 0.0f, 0.0f, 1.0f);
-
-            //    glBegin(GL_TRIANGLES);
-
-            //    _foodColor.GlApply();
-
-            //    float halfdiameter = static_cast<float>(std::sqrt(food.EnergyValue) * 5.0 / 1.5);
-
-            //    int idx = 0;
-            //    glIndexi(++idx); glVertex3f(0.0f, halfdiameter, 0.0f);
-            //    glIndexi(++idx); glVertex3f(halfdiameter / 1.5f, 0.0f, 0.0f);
-            //    glIndexi(++idx); glVertex3f(-halfdiameter / 1.5f, 0.0f, 0.0f);
-
-            //    glIndexi(++idx); glVertex3f(0.0f, -halfdiameter, 0.0f);
-            //    glIndexi(++idx); glVertex3f(halfdiameter / 1.5f, 0.0f, 0.0f);
-            //    glIndexi(++idx); glVertex3f(-halfdiameter / 1.5f, 0.0f, 0.0f);
-
-
-            //    glIndexi(++idx); glVertex3f(halfdiameter, 0.0f, 0.0f);
-            //    glIndexi(++idx); glVertex3f(0.0f, halfdiameter / 1.5f, 0.0f);
-            //    glIndexi(++idx); glVertex3f(0.0f, -halfdiameter / 1.5f, 0.0f);
-
-            //    glIndexi(++idx); glVertex3f(-halfdiameter, 0.0f, 0.0f);
-            //    glIndexi(++idx); glVertex3f(0.0f, halfdiameter / 1.5f, 0.0f);
-            //    glIndexi(++idx); glVertex3f(0.0f, -halfdiameter / 1.5f, 0.0f);
-
-            //    glEnd();
-
-            //    glPopMatrix();
-            //}
 
             glPopMatrix();
 		}

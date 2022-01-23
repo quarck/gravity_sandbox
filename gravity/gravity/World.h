@@ -133,7 +133,7 @@ namespace gravity
 
 		void init_planets()
 		{
-			_objects.set_simulation_start_in_epoch_time_millis(1638316800 * 1000); // 2021-12-01 00:00:00 UTC 
+			_objects.set_simulation_start_in_epoch_time_millis(1638316800LLU * 1000); // 2021-12-01 00:00:00 UTC 
 
 			double X, Y, Z, VX, VY, VZ; // some ugly hack to make the numbers below a bit more readable 
 
@@ -219,6 +219,11 @@ namespace gravity
 		int64_t current_iteration() const noexcept
 		{
 			return _objects.current_iteration();
+		}
+
+		uint64_t current_time_epoch_millis() const noexcept
+		{
+			return _objects.current_time_epoch_millis();
 		}
 
 		void align_observers_frame_of_reference() noexcept

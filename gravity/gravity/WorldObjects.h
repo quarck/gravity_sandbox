@@ -744,6 +744,10 @@ namespace gravity
 			return _current_iteration;
 		}
 
+		uint64_t current_time_epoch_millis() const noexcept
+		{
+			return _simulation_start_in_epoch_time_millis + static_cast<uint64_t>(std::round(_current_iteration * _time_delta * 1000.0));
+		}
 
 		void generate_report()
 		{
@@ -763,9 +767,7 @@ namespace gravity
 
 			auto& current_gen = get_generation(0);
 
-			uint64_t current_epoch_time{ 
-				static_cast<uint64_t>(std::round(_simulation_start_in_epoch_time_millis + _current_iteration * _time_delta * 1000.0))
-			};
+			uint64_t current_epoch_time{ current_time_epoch_millis() };
 
 			for (int idx = 0; idx < current_gen.size(); ++idx)
 			{
