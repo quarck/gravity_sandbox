@@ -142,7 +142,7 @@ namespace gravity
 					auto now = std::chrono::high_resolution_clock::now();
 					std::chrono::duration<double> sinceLastUpdate = std::chrono::duration_cast<std::chrono::duration<double>>(now - lastUIUpdate);
 
-					if (sinceLastUpdate.count() > 1.0 / 30.0)
+					if (sinceLastUpdate.count() > 1.0 / 30.0 || recording)
 					{						
 						viewDetails.timeRate = config.time_delta() * (world.current_iteration() - last_update_at) / static_cast<double>(sinceLastUpdate.count()); // seconds per second 
 						lastUIUpdate = now;
@@ -224,6 +224,22 @@ namespace gravity
 			_worldView.zoomReset();
 		}
 
+
+		void resetFocusObject()
+		{
+			_worldView.resetFocusObject();
+		}
+
+		void cycleObjectLeft()
+		{
+			_worldView.focusPrevObject();
+		}
+		
+		void cycleObjectRight()
+		{
+			_worldView.focusNextObject();
+		}
+
 		void OnKeyboard(WPARAM wParam)
 		{
 			switch (wParam)
@@ -282,6 +298,15 @@ namespace gravity
 
 			case '0': 
 				onZoomResetView();
+				resetFocusObject();
+				break;
+
+			case ',': case '<': 
+				cycleObjectLeft();
+				break;
+
+			case '.': case '>':
+				cycleObjectRight();
 				break;
 			}
 		}

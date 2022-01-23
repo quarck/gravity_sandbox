@@ -1,4 +1,39 @@
-﻿// TODO: 
+﻿//
+// Note: use this NASA api in order to obtain the real coordinates for the planets / other solar system bodies: 
+//  https://ssd-api.jpl.nasa.gov/doc/horizons.html
+// 
+// Particular query example to query Mars' (object 499) location relative to the Sun (@sun), using the 
+// Cartesian coordinates in International Celestial Reference Frame: 
+// 
+// https://ssd.jpl.nasa.gov/api/horizons.api?format=text&COMMAND='499'&OBJ_DATA='YES'&MAKE_EPHEM='YES'&EPHEM_TYPE='VECTORS'&CENTER='@sun'&START_TIME='2021-12-01'&STOP_TIME='2022-01-21'&STEP_SIZE='15%20d'&OUT_UNITS='KM-S'&REF_SYSTEM='ICRF'&VEC_TABLE='2'
+// 
+// Other bodies: 
+//  199  Mercury
+//  299  Venus                                                                
+//  399  Earth
+//      301 Moon 
+//  499  Mars 
+//      401 Phobos
+//      402 Deimos
+//  599  Jupiter 
+//      501 Io
+//      502 Europa
+//      ...
+//      550 Herse (2003J17)
+//      ...
+//  699  Saturn
+//      601 Mimas 
+//      602 Enceladus 
+//      ...
+//  799  Uranus
+//      701 ..
+//  899  Neptune
+//      801 ..
+//  999  Pluto
+//      901 Charon
+
+
+// TODO: 
 
 // report periodically - the total kinetic + potential energy of the system in respect to the sun's frame of reference 
 
@@ -98,69 +133,64 @@ namespace gravity
 
 		void init_planets()
 		{
-			// Motivation: validate this: 
-			// https://planetplanet.net/2017/05/03/the-ultimate-engineered-solar-system/
-			// (and: https://habr.com/ru/post/598687/)
+			_objects.set_simulation_start_in_epoch_time_millis(1638316800 * 1000); // 2021-12-01 00:00:00 UTC 
 
-			mass_body sun{};
-			sun.mass = SUN_MASS; // kg
-			sun.radius = SUN_RADIUS; // m
-			sun.temperature = 10000000;
-			_objects.register_body(sun);
+			double X, Y, Z, VX, VY, VZ; // some ugly hack to make the numbers below a bit more readable 
 
-			//mass_body jupyter{};
-			//jupyter.mass = JUPYTER_MASS; // kg
-			//jupyter.radius = JUPYTER_RADIUS; // m
-			//jupyter.location.x() = JUPUTER_ORBIT_RADIUS; // m
-			//jupyter.velocity.y() = orbital_velocity(sun.mass, JUPUTER_ORBIT_RADIUS);  // 13.06e+3; // m/s
-			//jupyter.temperature = 273;
-			//_objects.push_back(jupyter);
+			_objects.register_body({"The Sun", 1988500e24, 696000, 1000000, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 });
 
-			//{
-			//	mass_body dupyter{};
-			//	dupyter.mass = JUPYTER_MASS * 32; // kg
-			//	dupyter.radius = JUPYTER_RADIUS; // m
-			//	dupyter.location.value.x() = ONE_A_U * 185.0 / 189.0; // m
-			//	dupyter.velocity.value.y() = orbital_velocity(sun.mass, dupyter.location.value.x()) * 1.000001;
-			//	dupyter.temperature = 273;
-			//	_objects.register_body(dupyter);
-			//}
+			_objects.register_body({ "Mercury", 3.302e23, 2440, 400,  
+				X = -2.167664834454452E+07, Y = -6.619159190648106E+07, Z = -3.420692631296203E+06,
+				VX = 3.650927987393379E+01, VY = -1.273914346337067E+01, VZ = -4.389920191190015E+00 });
 
-			double sun_mass_adjusted = sun.mass;// +neutron_star.mass;
+			_objects.register_body({ "Venus", 48.685e23, 6051.84, 400,  
+				X = 7.576313873684648E+07, Y = 7.711607191532642E+07, Z = -3.313487956947327E+06,
+				VX = -2.508851408159857E+01, VY = 2.439292937054329E+01, VZ = 1.782524647980090E+00 });
 
-			auto mass_var = EARTH_MASS * 0.9;
-			auto loc_var = M_PI / 4.0;
+			_objects.register_body({ "Earth", 5.97219e24, 6371.01, 30,
+				 X = 5.358615709453598E+07, Y = 1.374511007334921E+08, Z = -7.098000273063779E+03,
+				 VX = -2.824425323200066E+01, VY = 1.071888568481009E+01, VZ = 5.551504930916273E-040 });
+			_objects.register_body({ "Moon", 7.349e22, 1737.53, 30,
+				  X = 5.324727782955997E+07, Y = 1.373107538738163E+08, Z = 1.427581423602998E+04,
+				  VX = -2.778205246706115E+01, VY = 9.758075795843698E+00, VZ = -7.964689569136452E-02 });
 
-			double d_odd = 1.0;
-			double d_evn = 1.0;
+			_objects.register_body({ "Mars", 6.4171e23, 3389.92, 30,
+			   X = -1.800625404850776E+08, Y = -1.519509644922584E+08, Z = 1.232371251878612E+06,
+			   VX = 1.653193518248757E+01, VY = -1.644419258786372E+01, VZ = -7.501597892699268E-01 });
+			_objects.register_body({ "Phobos", 1.08e20, 12, 30,
+				X = -1.800633484449605E+08, Y = -1.519415763992660E+08, Z = 1.233504578332104E+06,
+				VX = 1.463815474957840E+01, VY = -1.669734314209153E+01, VZ = 1.490280944102649E-01 });
+			_objects.register_body({ "Deimos", 1.80e20, 7, 30,
+				X = -1.800725291760565E+08, Y = -1.519306722879699E+08, Z = 1.238569708517231E+06,
+				VX = 1.544205807892980E+01, VY = -1.711382987552074E+01, VZ = -3.136605973651667E-01 });
 
-			//sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 52, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 170.0 / 189.0, d_odd, mass_var, loc_var);
-			//sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 52, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 185.0 / 189.0, d_evn, mass_var, loc_var);
-			//sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 52, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 200.0 / 189.0, d_odd, mass_var, loc_var);
-			//sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 52, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 216.0 / 189.0, d_evn, mass_var, loc_var);
-			//sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 52, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 234.0 / 189.0, d_odd, mass_var, loc_var);
-			//sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 52, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 254.0 / 189.0, d_evn, mass_var, loc_var);
-			//sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 52, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 275.0 / 189.0, d_odd, mass_var, loc_var);
-			//sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 52, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 298.0 / 189.0, d_evn, mass_var, loc_var);
+			_objects.register_body({ "Jupiter", 189818.722e22, 71492, 30,
+				X = 6.838721286912214E+08, Y = -3.024806468423285E+08, Z = -1.404409810935293E+07,
+				VX = 5.133912400306891E+00, VY = 1.257833242624969E+01, VZ = -1.670642775002857E-01});
+			// TODO: add major jupiter moons 
 
-			sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 52-28, EARTH_MASS, EARTH_RADIUS, ONE_A_U *0.95, d_odd, mass_var, loc_var);
-			sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 52-18, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 0.97, d_evn, mass_var, loc_var);
-			sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 52-10, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 1.03, d_odd, mass_var, loc_var);
-			sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 52-4, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 1.05, d_evn, mass_var, loc_var);
-			sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 52+4, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 1.09, d_odd, mass_var, loc_var);
-			sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 52+10, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 1.12, d_evn, mass_var, loc_var);
-			sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 52+18, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 1.15, d_odd, mass_var, loc_var);
-			sun_mass_adjusted += populate_orbit(sun_mass_adjusted, 52+28, EARTH_MASS, EARTH_RADIUS, ONE_A_U * 1.2, d_evn, mass_var, loc_var);
+			_objects.register_body({ "Saturn", 5.6834e26, 58232, 30,
+				X = 1.024053765137041E+09, Y = -1.075128773787984E+09, Z = -2.206167213916075E+07,
+				VX = 6.463717901383691E+00, VY = 6.654665277163426E+00, VZ = -3.733248248209207E-01 });
 
-			//mass_body impactor{};
-			//impactor.mass = EARTH_MASS / 50 / 50 / 50; // kg 1/50th of the size (130km in radius), 1/125000th of the mass 
-			//impactor.radius = 3500'000.0; // m
-			//impactor.temperature = 900; // K
-			//impactor.location.value.x() = -3.5e+11; // hand picked to produce an impact on the first turn of the orbit
-			//impactor.location.value.y() = 9.191e+10;
-			//impactor.velocity.value.x() = 40e+3; // 40km/s
-			//impactor.velocity.value.y() = 1e+3; // m/s
-			//_objects.register_body(impactor);
+			// TODO: add major saturn moons 
+
+			_objects.register_body({ "Uranus", 86.813e24, 25362, 30,
+				X = 2.166402843059769E+09, Y = 2.003850686154429E+09, Z = -2.063057646324039E+07,
+				VX = -4.670082502937194E+00, VY = 4.694611299968432E+00, VZ = 7.781814338959481E-02 });
+			// same
+
+			_objects.register_body({ "Neptune", 102.409e24, 24624, 30,
+				X = 4.431140574776667E+09, Y = -6.264926905311370E+08, Z = -8.922589280170983E+07,
+				VX = 7.301938467449688E-01, VY = 5.427938915323065E+00, VZ = -1.284171598559747E-01 });
+			// same
+
+			_objects.register_body({ "Pluto", 1.307e22, 1188.3, 30,
+				X = 2.249475791696351E+09, Y = -4.628093902163340E+09, Z = -1.551654004126823E+08,
+				VX = 5.022668067623437E+00, VY = 1.200137128287457E+00, VZ = -1.599130583011552E+00 });
+			_objects.register_body({ "Charon", 1.53e21, 606, 30,
+				X = 2.249461717304943E+09, Y = -4.628102738753292E+09, Z = -1.551550140308864E+08,
+				VX = 5.057298851302190E+00, VY = 1.342620937103221E+00, VZ = -1.430982763083136E+00 });
 
 			_objects.align_observers_frame_of_reference();
 		}

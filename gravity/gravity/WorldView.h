@@ -44,7 +44,7 @@ namespace gravity
 		static constexpr uint32_t VERDA_KOLORO = 0xff006f00u;
 		static constexpr uint32_t CFG_CLR_FOREGROUND = 0xff9f004fu;
 
-		static constexpr double LOCATION_SCALE{ 1.496e+11 * 2 / props::ViewPortWidth }; 		
+		static constexpr double LOCATION_SCALE{ ONE_A_U * 2 / props::ViewPortWidth }; 		
 		
 		TWorld& _world;
 
@@ -55,7 +55,7 @@ namespace gravity
 			{
 				std::pair(RUGA_KOLORO, "<S> - Save,  <L> - Load" /*", <R> - Reset" */),
 				std::pair(RUGA_KOLORO, "<T> - toggle recording"),
-				//std::pair(RUGA_KOLORO, "<G> - Recover hamsters"),
+				std::pair(RUGA_KOLORO, "< or > - cycle focused object"),
 				std::pair(RUGA_KOLORO, "<?> - help ON/OFF, <SPACE> - (un)pause, <esc> - quit"),
 			}
 		};
@@ -66,7 +66,8 @@ namespace gravity
 
 		//Color _foodColor{ 192, 64, 64 };
 
-		int _zoom{ 4 };
+		int _zoom{ 4 * 256 };
+		int _current_focused_object{ 0 };
 		
     public:
 
@@ -90,9 +91,22 @@ namespace gravity
 
 		void zoomReset()
 		{
-			_zoom = 4;
+			_zoom = 4 * 256;
 		}
 
+		void resetFocusObject()
+		{
+			_current_focused_object = 0;
+		}
+
+		void focusNextObject()
+		{
+			_current_focused_object++; // will deal with over/under-flows when updating view 
+		}
+		void focusPrevObject()
+		{
+			_current_focused_object--; // will deal with over/under-flows when updating view 
+		}
 
 		void PrintControls(const WorldViewDetails& details) noexcept
 		{
@@ -141,12 +155,12 @@ namespace gravity
 		}
 
 		template <typename TBody>
-		void DrawBody(const TBody& body)
+		void DrawBody(const TBody& body, double vpx, double vpy)
 		{
 			glPushMatrix();
 
-			auto scaled_x{ body.location.value.x() / LOCATION_SCALE / _zoom };
-			auto scaled_y{ body.location.value.y() / LOCATION_SCALE / _zoom };
+			auto scaled_x{ (body.location.value.x()-vpx) / LOCATION_SCALE / _zoom * 256 };
+			auto scaled_y{ (body.location.value.y()-vpy) / LOCATION_SCALE / _zoom * 256 };
 
 			glTranslatef(scaled_x, scaled_y, 0.0);
 			//glRotatef(
@@ -173,15 +187,19 @@ namespace gravity
 				glColor3f(0.2f, 0.4f, 1.0f);
 			}
 
-			float radius = static_cast<float>(body.radius / LOCATION_SCALE / _zoom * 1000.0);
-			if (radius < 1)
+			float factor = 1000.0;
+			if (_zoom > 128)
 			{
-				radius = 1.0;
+				factor = 1000.0;
 			}
-			else
+			else if (_zoom == 128)
 			{
-				radius = std::log(radius);
+				factor = 128.0 * 500.0 / _zoom;
 			}
+
+			float radius = static_cast<float>(body.radius / LOCATION_SCALE  * factor * 256 / _zoom);
+
+			radius = std::max<float>(1.0f, std::log(radius));
 
 			int idx = 0;
 			float prev_x{ radius };
@@ -237,10 +255,22 @@ namespace gravity
 
            // glTranslatef(-gravity::props::ViewPortWidth / 2.0f, -gravity::props::ViewPortHeight / 2.0f, 0.0);
 
-            for (auto& b : world.get_objects())
-            {
-				DrawBody(b);
-            }
+			const auto& objects = world.get_objects();
+			if (objects.size() > 0)
+			{
+				while (_current_focused_object < 0)
+					_current_focused_object += objects.size();
+
+				_current_focused_object = _current_focused_object % objects.size();
+
+				double vpx{ objects[_current_focused_object].location.value.x() };
+				double vpy{ objects[_current_focused_object].location.value.y() };
+
+				for (auto& b : objects)
+				{
+					DrawBody(b, vpx, vpy);
+				}
+			}
 
             //for (auto& food : _world->GetFoods())
             //{

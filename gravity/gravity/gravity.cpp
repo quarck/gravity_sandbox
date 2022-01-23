@@ -1,6 +1,3 @@
-// OpenGLTest1.cpp : Defines the entry point for the application.
-//
-
 #include "stdafx.h"
 #include <GL/gl.h>			/* OpenGL header file */
 #include <GL/glu.h>			/* OpenGL utilities header file */

@@ -43,54 +43,74 @@ namespace gravity
 
 		std::string label{};
 
+		mass_body() = default;
+
+		mass_body(
+			const std::string& _label,
+			double _mass, double _radius, double temp,
+			double x, double y, double z,
+			double vx, double vy, double vz
+		)
+			: label{ _label }
+			, mass{ _mass }
+			, mass_sqrt_g{ _mass * std::sqrt(GRAVITATIONAL_CONSTANT) }
+			, radius{ _radius * 1000.0 } // to meters
+			, temperature{ temp }
+			, location { x * 1000.0, y * 1000.0, z * 1000.0 } // to meters
+			, velocity { vx * 1000.0, vy * 1000.0, vz * 1000.0 } // to meters /s
+		{
+		}
 
 		static std::string get_csv_header()
 		{
 			std::ostringstream str;
 
 			str << "iteration,"
+				<< "epoch_millis,"
 				<< "body_idx," 
 				<< "label,"
 				<< "mass,"
-				<< "radius,"
+				<< "radius_km,"
 				<< "temperature,"
-				<< "location_x,"
-				<< "location_y,"
-				<< "location_z,"
-				<< "velocity_x,"
-				<< "velocity_y,"
-				<< "velocity_z";
+				<< "location_x_km,"
+				<< "location_y_km,"
+				<< "location_z_km,"
+				<< "velocity_x_kms,"
+				<< "velocity_y_kms,"
+				<< "velocity_z_kms";
 
 			return str.str();
 		}
 
-		std::string to_csv_line(uint64_t iteration, int body_idx)
+		std::string to_csv_line(uint64_t iteration, uint64_t epoch_millis, int body_idx)
 		{
 			std::ostringstream str;
 			
 			str << std::setprecision(20);
 
 			str << iteration << ","
+				<< epoch_millis << ","
 				<< body_idx << ","
 				<< label << ","
 				<< mass << ","
-				<< radius << ","
+				<< (radius / 1000.0) << ","
 				<< temperature << ","
-				<< location.value.x() << ","
-				<< location.value.y() << ","
-				<< location.value.z() << ","
-				<< velocity.value.x() << ","
-				<< velocity.value.y() << ","
-				<< velocity.value.z();
+				<< (location.value.x() / 1000.0) << ","
+				<< (location.value.y() / 1000.0) << ","
+				<< (location.value.z() / 1000.0) << ","
+				<< (velocity.value.x() / 1000.0) << ","
+				<< (velocity.value.y() / 1000.0) << ","
+				<< (velocity.value.z() / 1000.0);
 
 			return str.str();
 		}
 
-		bool from_csv_line(const std::string& line)
+		bool from_csv_line(const std::string& line, uint64_t& epoch_millis)
 		{
 			std::istringstream str{ line };
 
 			std::string iteration_str;
+			std::string epoch_millis_str;
 			std::string body_idx_str;
 
 			std::string mass_str, radius_str, temperature_str,
@@ -98,6 +118,7 @@ namespace gravity
 				velocity_x_str, velocity_y_str, velocity_z_str;
 
 			if (!std::getline(str, iteration_str, ',') ||
+				!std::getline(str, epoch_millis_str, ',') ||
 				!std::getline(str, body_idx_str, ',') ||
 				!std::getline(str, label, ',') ||
 				!std::getline(str, mass_str, ',') ||
@@ -114,21 +135,23 @@ namespace gravity
 				return false;
 			}
 
+			epoch_millis = std::stoull(epoch_millis_str);
+
 			mass = std::stod(mass_str);
 			mass_sqrt_g = mass * std::sqrt(GRAVITATIONAL_CONSTANT);
-			radius = std::stod(radius_str);
+			radius = std::stod(radius_str) * 1000.0;
 			temperature = std::stod(temperature_str);
 
 			location = {
-				std::stod(location_x_str),
-				std::stod(location_y_str),
-				std::stod(location_z_str)
+				std::stod(location_x_str) * 1000.0,
+				std::stod(location_y_str) * 1000.0,
+				std::stod(location_z_str) * 1000.0
 			};
 
 			velocity = {
-				std::stod(velocity_x_str),
-				std::stod(velocity_y_str),
-				std::stod(velocity_z_str)
+				std::stod(velocity_x_str) * 1000.0,
+				std::stod(velocity_y_str) * 1000.0,
+				std::stod(velocity_z_str) * 1000.0
 			};
 
 			return true;
@@ -191,6 +214,8 @@ namespace gravity
 		uint64_t _report_every_n_iterations{ 0 };
 		uint64_t _max_iterations{ 0 };
 		uint64_t _current_iteration{ 0 };
+
+		uint64_t _simulation_start_in_epoch_time_millis{ 0 };
 
 		uint64_t _mt_ticks_per_n_iter{ 1 };
 		uint64_t _st_ticks_per_n_iter{ 2 };
@@ -574,6 +599,11 @@ namespace gravity
 
 		}
 
+		void set_simulation_start_in_epoch_time_millis(uint64_t value)
+		{
+			_simulation_start_in_epoch_time_millis = value;
+		}
+
 		void register_body(const mass_body& body)
 		{
 			auto body_copy{ body };
@@ -641,15 +671,38 @@ namespace gravity
 			if (csv_header != mass_body::get_csv_header())
 				return false;
 
+			uint64_t prev_epoch_time{ 0 };
+			uint64_t epoch_time{ 0 };
+			bool show_warning{ false };
+
 			std::string line;
 			while (std::getline(istrm, line))
 			{
 				mass_body body;
-				if (!body.from_csv_line(line))
+				if (!body.from_csv_line(line, epoch_time))
 					return false;
 
+				if (prev_epoch_time != 0 && prev_epoch_time != epoch_time)
+				{
+					show_warning = true;
+				}
+
+				prev_epoch_time = epoch_time;
 				register_body(body);
 			}
+
+			_simulation_start_in_epoch_time_millis = epoch_time;
+
+			if (show_warning)
+			{
+				MessageBox(
+					NULL,
+					L"Warning: epoch times are inconsistent for objects in the input csv",
+					L"Warning",
+					MB_OK | MB_ICONHAND);
+			}
+
+			return true;
 		}
 
 		void set_output_csv(std::string output_file)
@@ -710,10 +763,14 @@ namespace gravity
 
 			auto& current_gen = get_generation(0);
 
+			uint64_t current_epoch_time{ 
+				static_cast<uint64_t>(std::round(_simulation_start_in_epoch_time_millis + _current_iteration * _time_delta * 1000.0))
+			};
+
 			for (int idx = 0; idx < current_gen.size(); ++idx)
 			{
 				auto& body = current_gen[idx];
-				auto line = body.to_csv_line(_current_iteration, idx);
+				auto line = body.to_csv_line(_current_iteration, idx, current_epoch_time);
 				ostrm << line << "\n";
 			}
 
@@ -723,6 +780,8 @@ namespace gravity
 		void save_to(std::ostream& stream)
 		{
 			stream.write(reinterpret_cast<const char*>(&_current_iteration), sizeof(_current_iteration));
+			stream.write(reinterpret_cast<const char*>(&_simulation_start_in_epoch_time_millis), sizeof(_simulation_start_in_epoch_time_millis));
+			stream.write(reinterpret_cast<const char*>(&_time_delta), sizeof(_time_delta));
 
 			uint32_t len = static_cast<uint32_t>(_bodies_gens[0].size());
 			stream.write(reinterpret_cast<const char*>(&len), sizeof(len));
@@ -739,7 +798,12 @@ namespace gravity
 		void load_from(std::istream& stream)
 		{
 			stream.read(reinterpret_cast<char*>(&_current_iteration), sizeof(_current_iteration));
+			stream.read(reinterpret_cast<char*>(&_simulation_start_in_epoch_time_millis), sizeof(_simulation_start_in_epoch_time_millis));
+			stream.read(reinterpret_cast<char*>(&_time_delta), sizeof(_time_delta));
 
+			_time_delta_times_1_2 = _time_delta / 2.0;
+			_time_delta_times_1_12 = _time_delta / 12.0;
+			
 			uint32_t len;
 			stream.read(reinterpret_cast<char*>(&len), sizeof(len));
 
