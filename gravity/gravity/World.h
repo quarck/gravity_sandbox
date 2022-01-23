@@ -251,6 +251,13 @@ namespace gravity
 				VX = 5.057298851302190E+00, VY = 1.342620937103221E+00, VZ = -1.430982763083136E+00 });
 
 			_objects.align_observers_frame_of_reference();
+
+
+			/*note: expected Mars' vectors at 1642204800000 are: 
+
+X =-1.033890980382836E+08 Y =-2.022621998544986E+08 Z =-1.702828498137295E+06
+ VX= 2.248438860057161E+01 VY=-8.949147127519316E+00 VZ=-7.390929678108806E-01
+ */
 		}
 
         const std::vector<mass_body>& get_objects() const noexcept
