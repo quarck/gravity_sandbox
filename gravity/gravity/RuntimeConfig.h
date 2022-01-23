@@ -10,7 +10,7 @@ namespace gravity
 {
     class runtime_config
     {
-        double _time_delta{ 0.1 };
+        double _time_delta{ 1 };
 
         uint64_t _report_every_n{ 1000 };
         uint64_t _max_n{ std::numeric_limits<uint64_t>::max() };

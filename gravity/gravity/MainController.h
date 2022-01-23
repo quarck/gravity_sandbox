@@ -268,22 +268,6 @@ namespace gravity
 				onAlignFrameOfRef();
 				break;
 
-			case 'r': case 'R': 
-				onResetWorld();
-				break;
-
-			case 'f': case 'F': 
-				onToggleFreezePredators();
-				break;
-
-			case 'b': case 'B': 
-				onBrainwashPredators();
-				break;
-
-			case 'g': case 'G': 
-				onRecoverHamsters();
-				break;
-
 			case 't': case 'T': 
 				onToggleScreenRecording();
 				break;
@@ -445,24 +429,5 @@ namespace gravity
 			world.align_observers_frame_of_reference();
 		}
 
-		void onResetWorld()
-		{
-
-		}
-
-		void onToggleFreezePredators()
-		{
-
-		}
-
-		void onBrainwashPredators()
-		{
-
-		}
-
-		void onRecoverHamsters()
-		{
-
-		}
     };
 }

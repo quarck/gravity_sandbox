@@ -53,9 +53,9 @@ namespace gravity
 		glText::Label _controlsLabelDetailed{
 			LABELS_BACKGROUND,
 			{
-				std::pair(RUGA_KOLORO, "<S> - Save,  <L> - Load" /*", <R> - Reset" */),
-				std::pair(RUGA_KOLORO, "<T> - toggle recording"),
-				std::pair(RUGA_KOLORO, "< or > - cycle focused object"),
+				std::pair(RUGA_KOLORO, "<S> - Save,  <L> - Load (binary, use command line for loading / logging into csv)" /*", <R> - Reset" */),
+				std::pair(RUGA_KOLORO, "<T> - toggle recording (dump png every 1024 frames)"),
+				std::pair(RUGA_KOLORO, "< or > - cycle focused object;   +/-/0 - zoom in/out/reset"),
 				std::pair(RUGA_KOLORO, "<?> - help ON/OFF, <SPACE> - (un)pause, <esc> - quit"),
 			}
 		};
@@ -123,7 +123,7 @@ namespace gravity
 			glPopMatrix();
 		}
 
-		void PrintStats(const WorldViewDetails& details) noexcept
+		void PrintStats(const WorldViewDetails& details, const std::string& currentObjectName) noexcept
 		{
 			glPushMatrix();
 
@@ -142,7 +142,7 @@ namespace gravity
 				LABELS_BACKGROUND,
 				{ 
 					std::pair(VERDA_KOLORO, ostr.str()),
-					std::pair(CFG_CLR_FOREGROUND, ""), // rcfg.str()),
+					std::pair(RUGA_KOLORO, currentObjectName), // rcfg.str()),
 				});
 			_iterAndCfgLabel.DrawAt(-1.0, 0.94);
 
@@ -241,22 +241,22 @@ namespace gravity
 			{
 				PrintControls(details);
 			}
-			PrintStats(details);
-
-            glScalef(
-                static_cast<GLfloat>(2.0 / gravity::props::ViewPortWidth),
-                static_cast<GLfloat>(2.0 / gravity::props::ViewPortHeight),
-                1.0f);
-
-           // glTranslatef(-gravity::props::ViewPortWidth / 2.0f, -gravity::props::ViewPortHeight / 2.0f, 0.0);
 
 			const auto& objects = world.get_objects();
 			if (objects.size() > 0)
 			{
 				while (_current_focused_object < 0)
 					_current_focused_object += objects.size();
-
 				_current_focused_object = _current_focused_object % objects.size();
+
+				PrintStats(details, objects[_current_focused_object].label);
+
+				glScalef(
+					static_cast<GLfloat>(2.0 / gravity::props::ViewPortWidth),
+					static_cast<GLfloat>(2.0 / gravity::props::ViewPortHeight),
+					1.0f);
+
+               // glTranslatef(-gravity::props::ViewPortWidth / 2.0f, -gravity::props::ViewPortHeight / 2.0f, 0.0);
 
 				double vpx{ objects[_current_focused_object].location.value.x() };
 				double vpy{ objects[_current_focused_object].location.value.y() };
