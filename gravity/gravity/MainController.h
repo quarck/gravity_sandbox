@@ -21,10 +21,43 @@
 
 namespace gravity
 {
-    class MainController
+	class IMainController
+	{
+	public:
+		virtual ~IMainController() {}
+
+		virtual void onViewportResize(int width, int height) = 0;
+
+		virtual bool IsUINeedsUpdate() const = 0;
+		virtual void ClearUINeedsUpdate() = 0;
+
+		virtual bool IsAppPaused() const = 0;
+		virtual void SetAppIsPaused(bool val) = 0;
+
+		virtual bool IsTerminating() const = 0;
+
+		virtual const HWND& GetHWND() const = 0;
+		virtual void SetHWND(HWND hwnd) = 0;
+
+		virtual const HDC& GetHDC() const = 0;
+		virtual void SetHDC(HDC hdc) = 0;
+
+		virtual const HPALETTE& GetHPalette() const = 0;
+		virtual void SetHPalette(HPALETTE hp) = 0;
+
+		virtual void DrawWorld() = 0;
+
+		virtual void OnKeyboard(WPARAM wParam) = 0;
+
+		virtual void Start() = 0;
+		virtual void Stop() = 0;
+	};
+
+	template <integration_method method>
+    class MainController : public IMainController
     {
 	public:
-		using TWorld = World;
+		using TWorld = World<method>;
 		using TObject = mass_body;
 		using TWorldView = WorldView<TWorld, TObject>;
 
@@ -85,7 +118,7 @@ namespace gravity
                 calcThread.join();
         }
 
-        void Start()
+        void Start() override
         {
 			world.set_time_delta(config.time_delta());
 			world.set_output_csv(config.output_file());
@@ -107,7 +140,7 @@ namespace gravity
             calcThread = std::thread(&MainController::CalcThread, this);
         }
 
-        void Stop()
+        void Stop() override
         {
             terminate = true;
         }
@@ -170,7 +203,7 @@ namespace gravity
             }
         }
 
-		void onViewportResize(int width, int height)
+		void onViewportResize(int width, int height) override
 		{
 			_vpWidth = width;
 			_vpHeight = height;
@@ -240,7 +273,7 @@ namespace gravity
 			_worldView.focusNextObject();
 		}
 
-		void OnKeyboard(WPARAM wParam)
+		void OnKeyboard(WPARAM wParam) override
 		{
 			switch (wParam)
 			{
@@ -295,7 +328,7 @@ namespace gravity
 			}
 		}
 
-        void DrawWorld()
+        void DrawWorld() override
         {
             std::lock_guard<std::mutex> l(worldLock);
 			viewDetails.paused = appPaused;
@@ -308,27 +341,27 @@ namespace gravity
 			}
         }
 
-        bool IsUINeedsUpdate() const { return uiNeedsUpdate; }
-        void ClearUINeedsUpdate() { uiNeedsUpdate = false; }
+        bool IsUINeedsUpdate() const override { return uiNeedsUpdate; }
+        void ClearUINeedsUpdate() override { uiNeedsUpdate = false; }
 
-        bool IsAppPaused() const { return appPaused; }
-        void SetAppIsPaused(bool val) { appPaused = val; }
+		bool IsAppPaused() const override { return appPaused; }
+		void SetAppIsPaused(bool val) override { appPaused = val; }
 
-        bool IsTerminating() const { return terminate; }
+        bool IsTerminating() const override { return terminate; }
 
 
-        const HWND& GetHWND() const { return hWND; }
-        void SetHWND(HWND hwnd) 
+		const HWND& GetHWND() const override { return hWND; }
+		void SetHWND(HWND hwnd)override
         { 
             hWND = hwnd; 
             SetHDC(GetDC(hWND));
         }
 
-        const HDC& GetHDC() const { return hDC; }
-        void SetHDC(HDC hdc) { hDC = hdc; }
+		const HDC& GetHDC() const override { return hDC; }
+		void SetHDC(HDC hdc) override { hDC = hdc; }
 
-        const HPALETTE& GetHPalette() const { return hPalette; }
-        void SetHPalette(HPALETTE hp) { hPalette = hp; }
+		const HPALETTE& GetHPalette() const override { return hPalette; }
+		void SetHPalette(HPALETTE hp) override { hPalette = hp; }
 
 	private:
 

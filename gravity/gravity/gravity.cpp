@@ -20,7 +20,7 @@
 
 #define MAX_LOADSTRING 100
 
-using TMainController = gravity::MainController;
+using TMainController = gravity::IMainController;
 
 std::unique_ptr<TMainController> controller;
 
@@ -319,14 +319,82 @@ int APIENTRY wWinMain(_In_ HINSTANCE hCurrentInst, _In_opt_ HINSTANCE hPreviousI
         MessageBox(
             NULL, 
             L"The command line arguments passes are invalid. \r\nUsage:\r\n"
-            L"gravity.exe [--input <input_file.csv>] [--output <output.csv>] [--time-delta <time_delta_seconds>] [--report-every-n <N>] [--max-n <N>]",
+            L"gravity.exe [--input <input_file.csv>] [--output <output.csv>] [--time-delta <time_delta_seconds>] [--report-every-n <N>] [--max-n <N>] [--method <M>]\r\n"
+            L"Supported integration methods (--method): \r\n"
+            L"0 - naive\r\n"
+            L"1 - naive_kahan\r\n"
+            L"2 - linear\r\n"
+            L"3 - linear_kahan\r\n"
+            L"4 - quadratic\r\n"
+            L"5 - quadratic_kahan\r\n"
+            L"6 - cubic\r\n"
+            L"7 - cubic_kahan\r\n"
+            L"8 - quasi_cubic_quadratic\r\n"
+            L"9 - quasi_cubic_quadratic_kahan\r\n"
+            L"10 - quasi_cubic_quadratic_kahan_kahan [DEFAULT]\r\n",
             L"Incorrect usage", 
             MB_OK | MB_ICONHAND);
 
         return 0;
     }
 
-    controller = std::make_unique<TMainController>(config);
+    switch (config.get_integration_method())
+    {
+    case gravity::integration_method::naive:
+        controller = std::unique_ptr<TMainController>(
+            new gravity::MainController<gravity::integration_method::naive>(config));
+        break;
+
+    case gravity::integration_method::naive_kahan:
+        controller = std::unique_ptr<TMainController>(
+            new gravity::MainController<gravity::integration_method::naive_kahan>(config));
+        break;
+
+    case gravity::integration_method::linear:
+        controller = std::unique_ptr<TMainController>(
+            new gravity::MainController<gravity::integration_method::linear>(config));
+        break;
+
+    case gravity::integration_method::linear_kahan:
+        controller = std::unique_ptr<TMainController>(
+            new gravity::MainController<gravity::integration_method::linear_kahan>(config));
+        break;
+
+    case gravity::integration_method::quadratic:
+        controller = std::unique_ptr<TMainController>(
+            new gravity::MainController<gravity::integration_method::quadratic>(config));
+        break;
+
+    case gravity::integration_method::quadratic_kahan:
+        controller = std::unique_ptr<TMainController>(
+            new gravity::MainController<gravity::integration_method::quadratic_kahan>(config));
+        break;
+
+    case gravity::integration_method::cubic:
+        controller = std::unique_ptr<TMainController>(
+            new gravity::MainController<gravity::integration_method::cubic>(config));
+        break;
+
+    case gravity::integration_method::cubic_kahan:
+        controller = std::unique_ptr<TMainController>(
+            new gravity::MainController<gravity::integration_method::cubic_kahan>(config));
+        break;
+
+    case gravity::integration_method::quasi_cubic_quadratic:
+        controller = std::unique_ptr<TMainController>(
+            new gravity::MainController<gravity::integration_method::quasi_cubic_quadratic>(config));
+        break;
+
+    case gravity::integration_method::quasi_cubic_quadratic_kahan:
+        controller = std::unique_ptr<TMainController>(
+            new gravity::MainController<gravity::integration_method::quasi_cubic_quadratic_kahan>(config));
+        break;
+
+    case gravity::integration_method::quasi_cubic_quadratic_kahan_kahan:
+        controller = std::unique_ptr<TMainController>(
+            new gravity::MainController<gravity::integration_method::quasi_cubic_quadratic_kahan_kahan>(config));
+        break;
+    }
 
     controller->SetHWND(
         CreateOpenGLWindow(_T("Gravity Sandbox"), 0, 0,

@@ -71,9 +71,10 @@
 
 namespace gravity
 { 
+	template <integration_method method>
     class World
     {
-		gravity_struct _objects;
+		gravity_struct<method> _objects;
         Random _random{};
 
 	public:

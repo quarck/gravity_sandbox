@@ -6,6 +6,8 @@
 #include <string>
 #include <vector>
 
+#include "WorldObjects.h"
+
 namespace gravity
 {
     class runtime_config
@@ -21,6 +23,8 @@ namespace gravity
         std::string _output_file{};
 
         bool _auto_start{ false };
+
+        integration_method method{ integration_method::quasi_cubic_quadratic_kahan_kahan };
 
     public:
 
@@ -92,6 +96,19 @@ namespace gravity
                 {
                     _auto_start = true;
                 }
+                else if (wcscmp(argv[idx], L"--method") == 0 && (idx + 1) < argc)
+                {
+                    int m = std::stoi(std::wstring{ argv[idx + 1] });
+                    idx++;
+
+                    if (m < static_cast<int>(integration_method::naive) ||
+                        m > static_cast<int>(integration_method::quasi_cubic_quadratic_kahan_kahan))
+                    {
+                        return false;
+                    }
+
+                    method = static_cast<integration_method>(m);
+                }
                 else
                 {
                     return false;
@@ -99,6 +116,11 @@ namespace gravity
             }
 
             return true;
+        }
+
+        inline integration_method get_integration_method() const noexcept
+        {
+            return method;
         }
 
         inline int num_worker_thrads() const noexcept 
