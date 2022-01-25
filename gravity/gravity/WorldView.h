@@ -245,11 +245,14 @@ namespace gravity
 			const auto& objects = world.get_objects();
 			if (objects.size() > 0)
 			{
-				while (_current_focused_object < 0)
-					_current_focused_object += objects.size();
-				_current_focused_object = _current_focused_object % objects.size();
+				int focused_obj_modulo = objects.size() + 1;
+				int focus = _current_focused_object;
 
-				PrintStats(details, objects[_current_focused_object].label);
+				while (focus < 0)
+					focus += focused_obj_modulo;
+				focus = (focus % focused_obj_modulo) - 1;
+
+				PrintStats(details, focus != -1 ? objects[focus].label : "");
 
 				glScalef(
 					static_cast<GLfloat>(2.0 / gravity::props::ViewPortWidth),
@@ -258,8 +261,14 @@ namespace gravity
 
                // glTranslatef(-gravity::props::ViewPortWidth / 2.0f, -gravity::props::ViewPortHeight / 2.0f, 0.0);
 
-				double vpx{ objects[_current_focused_object].location.value.x() };
-				double vpy{ objects[_current_focused_object].location.value.y() };
+				double vpx{ 0.0 };
+				double vpy{ 0.0 };
+
+				if (focus != -1)
+				{
+					vpx = objects[focus].location.value.x();
+					vpy = objects[focus].location.value.y();
+				}
 
 				for (auto& b : objects)
 				{
