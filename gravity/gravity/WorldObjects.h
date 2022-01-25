@@ -241,7 +241,8 @@ namespace gravity
 		double _time_delta_times_1_12{ _time_delta / 12.0 };
 		double _time_delta_times_1_24{ _time_delta / 24.0 };
 
-		std::string report_file{};
+		std::string _report_file{};
+		std::string _report_centre{};
 
 		bool _first_report{ true };
 
@@ -831,7 +832,12 @@ namespace gravity
 
 		void set_output_csv(std::string output_file)
 		{
-			report_file = output_file;
+			_report_file = output_file;
+		}
+
+		void set_report_centre(std::string report_centre)
+		{
+			_report_centre = report_centre;
 		}
 
 		void set_report_every(uint64_t report_every)
@@ -875,12 +881,12 @@ namespace gravity
 
 		void generate_report()
 		{
-			if (report_file.empty())
+			if (_report_file.empty())
 			{
 				return;
 			}
 
-			std::ofstream ostrm(report_file, std::ios::app);
+			std::ofstream ostrm(_report_file, std::ios::app);
 
 			if (_first_report)
 			{
@@ -891,12 +897,29 @@ namespace gravity
 
 			auto& current_gen = get_generation(0);
 
+			vec3d_pd loc_centre{ 0.0, 0.0, 0.0 };
+			vec3d_pd vel_centre{ 0.0, 0.0, 0.0 };
+
+			for (const auto& body: current_gen)
+			{
+				if (body.label == _report_centre)
+				{
+					loc_centre = body.location.value;
+					vel_centre = body.velocity.value;
+					break;
+				}
+			}
+
 			uint64_t current_epoch_time{ current_time_epoch_millis() };
 
 			for (int idx = 0; idx < current_gen.size(); ++idx)
 			{
-				auto& body = current_gen[idx];
-				auto line = body.to_csv_line(_current_iteration, current_epoch_time, idx);
+				mass_body body_copy = current_gen[idx];
+				
+				body_copy.location.value -= loc_centre;
+				body_copy.velocity.value -= vel_centre;
+
+				auto line = body_copy.to_csv_line(_current_iteration, current_epoch_time, idx);
 				ostrm << line << "\n";
 			}
 

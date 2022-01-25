@@ -318,6 +318,11 @@ X =-1.033890980382836E+08 Y =-2.022621998544986E+08 Z =-1.702828498137295E+06
 			_objects.set_output_csv(output_file);
 		}
 
+		void set_report_centre(std::string output_file)
+		{
+			_objects.set_report_centre(output_file);
+		}
+
 		void set_report_every(uint64_t report_every)
 		{
 			_objects.set_report_every(report_every);

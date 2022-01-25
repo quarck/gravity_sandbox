@@ -26,6 +26,8 @@ namespace gravity
 
         integration_method method{ integration_method::cubic_kahan };
 
+        std::string _report_centre{};
+
     public:
 
         runtime_config()
@@ -52,7 +54,7 @@ namespace gravity
 
             if (err == EILSEQ)
                 return "";
-            return std::string(buffer.data(), converted);
+            return std::string(buffer.data(), converted-1);
         }
 
         static LPWSTR get_usage()
@@ -61,6 +63,7 @@ namespace gravity
                 L"Usage:\r\n"
                 L"gravity.exe [--input <input_file.csv>] [--output <output.csv>] [options]\r\n"
                 L"options are:\r\n"
+                L"  --report-centre <name>\r\n" L"    name of the body to use as a base for report coordinate system\r\n"
                 L"  --time-delta <time_delta_seconds>\r\n" L"    default is 1.0, supports float values\r\n"
                 L"  --report-every <simulated_seconds>\r\n" L"    report into <output.csv> every given simulated period\r\n"
                 L"  --duration <simulated_seconds>\r\n" L"    automatically stop the simulation after simulating this much\r\n"
@@ -101,6 +104,11 @@ namespace gravity
                 else if (wcscmp(argv[idx], L"--output") == 0 && (idx + 1) < argc)
                 {
                     _output_file = wcs2mbs(argv[idx + 1]);
+                    idx++;
+                }
+                else if (wcscmp(argv[idx], L"--report-centre") == 0 && (idx + 1) < argc)
+                {
+                    _report_centre = wcs2mbs(argv[idx + 1]);
                     idx++;
                 }
                 else if (wcscmp(argv[idx], L"--time-delta") == 0 && (idx + 1) < argc)
@@ -184,6 +192,11 @@ namespace gravity
         inline const std::string& output_file() const noexcept
         {
             return _output_file;
+        }
+
+        inline const std::string& report_centre() const noexcept
+        {
+            return _report_centre;
         }
 
         inline bool auto_star() const noexcept

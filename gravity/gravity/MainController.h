@@ -122,6 +122,7 @@ namespace gravity
         {
 			world.set_time_delta(config.time_delta());
 			world.set_output_csv(config.output_file());
+			world.set_report_centre(config.report_centre());
 			world.set_report_every(config.report_every_n());
 			world.set_max_iterations(config.max_n());
 
