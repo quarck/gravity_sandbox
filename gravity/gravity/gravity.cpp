@@ -322,16 +322,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hCurrentInst, _In_opt_ HINSTANCE hPreviousI
 
     switch (config.get_integration_method())
     {
-    case gravity::integration_method::naive:
-        controller = std::unique_ptr<TMainController>(
-            new gravity::MainController<gravity::integration_method::naive>(config));
-        break;
-
-    case gravity::integration_method::naive_kahan:
-        controller = std::unique_ptr<TMainController>(
-            new gravity::MainController<gravity::integration_method::naive_kahan>(config));
-        break;
-
     case gravity::integration_method::linear:
         controller = std::unique_ptr<TMainController>(
             new gravity::MainController<gravity::integration_method::linear>(config));
@@ -360,21 +350,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hCurrentInst, _In_opt_ HINSTANCE hPreviousI
     case gravity::integration_method::cubic_kahan:
         controller = std::unique_ptr<TMainController>(
             new gravity::MainController<gravity::integration_method::cubic_kahan>(config));
-        break;
-
-    case gravity::integration_method::quasi_cubic_quadratic:
-        controller = std::unique_ptr<TMainController>(
-            new gravity::MainController<gravity::integration_method::quasi_cubic_quadratic>(config));
-        break;
-
-    case gravity::integration_method::quasi_cubic_quadratic_kahan:
-        controller = std::unique_ptr<TMainController>(
-            new gravity::MainController<gravity::integration_method::quasi_cubic_quadratic_kahan>(config));
-        break;
-
-    case gravity::integration_method::quasi_cubic_quadratic_kahan_kahan:
-        controller = std::unique_ptr<TMainController>(
-            new gravity::MainController<gravity::integration_method::quasi_cubic_quadratic_kahan_kahan>(config));
         break;
     }
 

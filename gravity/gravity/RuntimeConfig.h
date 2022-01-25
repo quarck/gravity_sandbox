@@ -24,7 +24,7 @@ namespace gravity
 
         bool _auto_start{ false };
 
-        integration_method method{ integration_method::quasi_cubic_quadratic_kahan_kahan };
+        integration_method method{ integration_method::cubic_kahan };
 
         std::string _report_centre{};
 
@@ -70,14 +70,12 @@ namespace gravity
                 L"  --auto-start\r\n" L"    start unpaused\r\n"
                 L"  --method <integration_method>\r\n" L"    Use specific integration method\r\n"
                 L"    Supported integration methods\r\n"
-                L"    0 - naive\r\n" L"         v += f(t) * dt\r\n"
-                L"    1 - naive_kahan\r\n" L"         same using Kahan sum\r\n"
-                L"    2 - linear\r\n" L"         v += (f(t) + f(t-1)) / 2.0 * dt\r\n"
-                L"    3 - linear_kahan\r\n" L"         same using Kahan sum\r\n"
-                L"    4 - quadratic\r\n" L"         v += (5*f(t) + 8*f(t-1) - f(t-2)) / 12.0 * dt\r\n"
-                L"    5 - quadratic_kahan\r\n" L"         same using Kahan sum\r\n"
-                L"    6 - cubic\r\n" L"         v += (-f(t) + 13*f(t-1) + 13*f(t-2) - f(t-3)) / 24.0 * dt\r\n"
-                L"    7 - cubic_kahan [DEFAULT]\r\n" L"         same using Kahan sum\r\n"
+                L"    0 - linear\r\n"
+                L"    1 - linear\r\n"
+                L"    2 - quadratic\r\n"
+                L"    3 - quadratic_kahan\r\n"
+                L"    4 - cubic\r\n"
+                L"    5 - cubic_kahan [DEFAULT]\r\n" 
                 ;
         }
 
@@ -135,8 +133,8 @@ namespace gravity
                     int m = std::stoi(std::wstring{ argv[idx + 1] });
                     idx++;
 
-                    if (m < static_cast<int>(integration_method::naive) ||
-                        m > static_cast<int>(integration_method::quasi_cubic_quadratic_kahan_kahan))
+                    if (m < static_cast<int>(integration_method::linear) ||
+                        m > static_cast<int>(integration_method::cubic_kahan))
                     {
                         return false;
                     }

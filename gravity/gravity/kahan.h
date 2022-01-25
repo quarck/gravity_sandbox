@@ -63,6 +63,12 @@ struct acc3d : public acc<vec3d_pd>
 		this->acc<vec3d_pd>::compensation = { 0.0, 0.0, 0.0 };
 	}
 
+	explicit acc3d(const vec3d_pd& vec)
+	{
+		this->acc<vec3d_pd>::value = vec;
+		this->acc<vec3d_pd>::compensation = { 0.0, 0.0, 0.0 };
+	}
+
 	acc3d() = default;
 	acc3d(const acc3d& other) = default;
 };

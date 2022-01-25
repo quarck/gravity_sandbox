@@ -33,12 +33,11 @@ namespace gravity
 		acc3d location{};
 		acc3d velocity{};
 
-		acc3d gravity_force{}; // current resulting total gravity vector after accounting for all the bodies in the system 
-		vec3d_pd acceleration{}; // current acceleration, based on the current gravity force (and mass)
+		acc3d gravity_acceleration{}; 
 
 		double radius{};
 		double mass{ 1.0 };
-		double mass_sqrt_g{ 1.0 * std::sqrt(GRAVITATIONAL_CONSTANT) };
+		double mass_G{ 1.0 * GRAVITATIONAL_CONSTANT };
 		double temperature{ 300 };
 
 		std::string label{};
@@ -53,7 +52,7 @@ namespace gravity
 		)
 			: label{ _label }
 			, mass{ _mass }
-			, mass_sqrt_g{ _mass * std::sqrt(GRAVITATIONAL_CONSTANT) }
+			, mass_G{ _mass * GRAVITATIONAL_CONSTANT }
 			, radius{ _radius * 1000.0 } // to meters
 			, temperature{ temp }
 			, location { x * 1000.0, y * 1000.0, z * 1000.0 } // to meters
@@ -138,7 +137,7 @@ namespace gravity
 			epoch_millis = std::stoull(epoch_millis_str);
 
 			mass = std::stod(mass_str);
-			mass_sqrt_g = mass * std::sqrt(GRAVITATIONAL_CONSTANT);
+			mass_G = mass * GRAVITATIONAL_CONSTANT;
 			radius = std::stod(radius_str) * 1000.0;
 			temperature = std::stod(temperature_str);
 
@@ -162,8 +161,7 @@ namespace gravity
 			location.save_to(stream);
 			velocity.save_to(stream);
 
-			gravity_force.save_to(stream);
-			acceleration.save_to(stream);
+			gravity_acceleration.save_to(stream);
 
 			stream.write(reinterpret_cast<const char*>(&radius), sizeof(radius));
 			stream.write(reinterpret_cast<const char*>(&mass), sizeof(mass));
@@ -175,30 +173,24 @@ namespace gravity
 			location.load_from(stream);
 			velocity.load_from(stream);
 
-			gravity_force.load_from(stream);
-			acceleration.load_from(stream);
-
+			gravity_acceleration.load_from(stream);
+			
 			stream.read(reinterpret_cast<char*>(&radius), sizeof(radius));
 			stream.read(reinterpret_cast<char*>(&mass), sizeof(mass));
 			stream.read(reinterpret_cast<char*>(&temperature), sizeof(temperature));
 
-			mass_sqrt_g = mass * std::sqrt(GRAVITATIONAL_CONSTANT);
+			mass_G = mass * GRAVITATIONAL_CONSTANT;
 		}
 	};
 
 	enum class integration_method
 	{
-		naive,
-		naive_kahan,
 		linear,
 		linear_kahan,
 		quadratic,
 		quadratic_kahan,
 		cubic,
 		cubic_kahan,
-		quasi_cubic_quadratic,
-		quasi_cubic_quadratic_kahan,
-		quasi_cubic_quadratic_kahan_kahan,
 	};
 
 	//
@@ -363,7 +355,7 @@ namespace gravity
 
 					mass_location  +=  body.location.value * body.mass;
 					mass_velocity  += body.velocity.value * body.mass;
-					force += body.acceleration * body.mass;
+					force += body.gravity_acceleration.value * body.mass;
 
 					total_mass += body.mass;
 
@@ -381,11 +373,11 @@ namespace gravity
 				auto& p1_dst{ prev1_gen[dst_idx] };
 
 				c_dst.mass = total_mass.value;
-				c_dst.mass_sqrt_g = c_dst.mass * std::sqrt(GRAVITATIONAL_CONSTANT);
+				c_dst.mass_G = c_dst.mass * GRAVITATIONAL_CONSTANT;
 				c_dst.radius = std::pow(total_vol_times_N.value, 1.0 / 3.0);
 				c_dst.location.value = mass_location.value / total_mass.value;
 				c_dst.velocity.value = mass_velocity.value / total_mass.value;
-				c_dst.acceleration = force.value / total_mass.value;
+				c_dst.gravity_acceleration = acc3d{ force.value / total_mass.value };
 				c_dst.temperature = std::max(max_temp, 3000.0); // boiling planet's guts 
 				c_dst.label = resulting_label;
 
@@ -437,7 +429,7 @@ namespace gravity
 
 			for (auto& o : next_gen)
 			{
-				o.gravity_force = { 0.0, 0.0, 0.0 };
+				o.gravity_acceleration = { 0.0, 0.0, 0.0 };
 			}
 
 			for (int i = 0; i < current_gen.size(); ++i)
@@ -455,10 +447,10 @@ namespace gravity
 
 					if (r_modulo > curr_a.radius + curr_b.radius)
 					{
-						auto F_ab = r_ba * (curr_a.mass_sqrt_g * curr_b.mass_sqrt_g / std::pow(r_modulo, 3.0));
+						auto r_mod_pow_3 = std::pow(r_modulo, 3.0);
 
-						next_a.gravity_force += F_ab;
-						next_b.gravity_force += -F_ab;
+						next_a.gravity_acceleration += r_ba * (curr_b.mass_G / r_mod_pow_3);
+						next_b.gravity_acceleration += -r_ba * (curr_a.mass_G / r_mod_pow_3);
 
 						if (r_modulo < curr_a.radius * 10)
 						{
@@ -501,7 +493,7 @@ namespace gravity
 			const auto& curr_a{ current_gen[i] };
 			auto& next_a{ next_gen[i] };
 
-			next_a.gravity_force = { 0.0, 0.0, 0.0 };
+			next_a.gravity_acceleration = { 0.0, 0.0, 0.0 };
 
 			for (int j = 0; j < current_gen.size(); ++j)
 			{
@@ -517,8 +509,7 @@ namespace gravity
 
 				if (r_modulo > curr_a.radius + curr_b.radius)
 				{
-					auto F_ab = r_ba * (curr_a.mass_sqrt_g * curr_b.mass_sqrt_g / std::pow(r_modulo, 3.0));
-					next_a.gravity_force += F_ab;
+					next_a.gravity_acceleration += r_ba * (curr_b.mass_G / std::pow(r_modulo, 3.0));
 
 					if (r_modulo < curr_a.radius * 10)
 					{
@@ -534,44 +525,37 @@ namespace gravity
 			iterate_move(prev1_gen[i], prev0_gen[i], curr_a, next_a);
 		}
 
-		inline void iterate_naive(const mass_body& current, mass_body& next) noexcept
-		{
-			next.acceleration = next.gravity_force.value / next.mass;
-			next.velocity.value = current.velocity.value + next.acceleration * _time_delta;
-			next.location.value = current.location.value + next.velocity.value * _time_delta;
-		}
-
-		inline void iterate_naive_kahan(const mass_body& current, mass_body& next) noexcept
-		{
-			next.acceleration = next.gravity_force.value / next.mass;
-			next.velocity = current.velocity + next.acceleration * _time_delta;
-			next.location = current.location + next.velocity.value * _time_delta;
-		}
-
 		inline void iterate_linear(const mass_body& current, mass_body& next) noexcept
 		{
-			next.acceleration = next.gravity_force.value / next.mass;
-			next.velocity.value = current.velocity.value + (next.acceleration + current.acceleration) * _time_delta_times_1_2;
-			next.location.value = current.location.value + (next.velocity.value + current.velocity.value) * _time_delta_times_1_2;
+			next.velocity.value = current.velocity.value + next.gravity_acceleration.value * _time_delta;
+			next.location.value = current.location.value + next.velocity.value * _time_delta;
 		}
 
 		inline void iterate_linear_kahan(const mass_body& current, mass_body& next) noexcept
 		{
-			next.acceleration = next.gravity_force.value / next.mass;
-			next.velocity = current.velocity + (next.acceleration + current.acceleration) * _time_delta_times_1_2;
-			next.location = current.location + (next.velocity.value + current.velocity.value) * _time_delta_times_1_2;
+			next.velocity = current.velocity + next.gravity_acceleration.value * _time_delta;
+			next.location = current.location + next.velocity.value * _time_delta;
 		}
 
 		//
 		// This method uses the current value - v_0, previous v_1 and the one before v_2 to 
-		// interpolate the curve into quadratic equation, then using exact integration on the range from (-time_delta, 0) we
+		// interpolate the curve into quadratic equation, then using exact integration on the range from (t-time_delta/2, t+time_delta/2) we
 		// find the value of velocity / location change based on a quadratic approximation to the actual function
 		// 
 		inline void iterate_quadratic(const mass_body& prev0, const mass_body& current, mass_body& next) noexcept
 		{
-			next.acceleration = next.gravity_force.value / next.mass;
-			next.velocity.value = current.velocity.value + (5 * next.acceleration + 8 * current.acceleration - prev0.acceleration) * _time_delta_times_1_12;
-			next.location.value = current.location.value + (5 * next.velocity.value + 8 * current.velocity.value - prev0.velocity.value) * _time_delta_times_1_12;
+			next.velocity.value = current.velocity.value
+				+ (
+					25 * next.gravity_acceleration.value
+					- 2 * current.gravity_acceleration.value
+					+ prev0.gravity_acceleration.value
+				) * _time_delta_times_1_24;
+			next.location.value = current.location.value + 
+				(
+					25 * next.velocity.value + 
+					- 2 * current.velocity.value 
+					+ prev0.velocity.value
+				) * _time_delta_times_1_24;
 		}
 
 		//
@@ -579,9 +563,18 @@ namespace gravity
 		//
 		inline void iterate_quadratic_kahan(const mass_body& prev0, const mass_body& current, mass_body& next) noexcept
 		{
-			next.acceleration = next.gravity_force.value / next.mass;
-			next.velocity = current.velocity + (5 * next.acceleration + 8 * current.acceleration - prev0.acceleration) * _time_delta_times_1_12;
-			next.location = current.location + (5 * next.velocity.value + 8 * current.velocity.value - prev0.velocity.value) * _time_delta_times_1_12;
+			next.velocity = current.velocity
+				+ (
+					25 * next.gravity_acceleration.value 
+					- 2 * current.gravity_acceleration.value 
+					+ prev0.gravity_acceleration.value
+				) * _time_delta_times_1_24;
+			next.location = current.location +
+				(
+					25 * next.velocity.value +
+					-2 * current.velocity.value
+					+ prev0.velocity.value
+				) * _time_delta_times_1_24;
 		}
 
 		//
@@ -589,21 +582,20 @@ namespace gravity
 		// 
 		inline void iterate_cubic(const mass_body& prev1, const mass_body& prev0, const mass_body& current, mass_body& next) noexcept
 		{
-			next.acceleration = next.gravity_force.value / next.mass;
 			next.velocity.value = current.velocity.value +
 				(
-					- next.acceleration 
-					+ 13 * current.acceleration 
-					+ 13 * prev0.acceleration
-					- prev1.acceleration
+					26 * next.gravity_acceleration.value
+					+ (-5) * current.gravity_acceleration.value
+					+ 4 * prev0.gravity_acceleration.value
+					+ (-1)* prev1.gravity_acceleration.value
 				) * _time_delta_times_1_24;
 
 			next.location.value = current.location.value +
 				(
-					- next.velocity.value 
-					+ 13 * current.velocity.value 
-					+ 13 * prev0.velocity.value
-					- prev1.velocity.value
+					26 * next.velocity.value 
+					+ (-5) * current.velocity.value 
+					+ 4 * prev0.velocity.value
+					+ (-1) * prev1.velocity.value
 				) * _time_delta_times_1_24;
 		}
 
@@ -612,106 +604,27 @@ namespace gravity
 		// 
 		inline void iterate_cubic_kahan(const mass_body& prev1, const mass_body& prev0, const mass_body& current, mass_body& next) noexcept
 		{
-			next.acceleration = next.gravity_force.value / next.mass;
 			next.velocity = current.velocity +
 				(
-					-next.acceleration
-					+ 13 * current.acceleration
-					+ 13 * prev0.acceleration
-					- prev1.acceleration
-					) * _time_delta_times_1_24;
+					26 * next.gravity_acceleration.value
+					+ (-5) * current.gravity_acceleration.value
+					+ 4 * prev0.gravity_acceleration.value
+					+ (-1) * prev1.gravity_acceleration.value
+				) * _time_delta_times_1_24;
 
 			next.location = current.location +
 				(
-					-next.velocity.value
-					+ 13 * current.velocity.value
-					+ 13 * prev0.velocity.value
-					- prev1.velocity.value
-					) * _time_delta_times_1_24;
+					26 * next.velocity.value
+					+ (-5) * current.velocity.value
+					+ 4 * prev0.velocity.value
+					+ (-1) * prev1.velocity.value
+				) * _time_delta_times_1_24;
 		}
 
-
-		//
-		// An attempt to improve the accuracy. 
-		// This method on each iteration will calculate quadratic delta for the current step, 
-		// and will calculate the difference between cubic and quadratic for the previos step with the new 
-		// value taken into account (t0), thus correcting previous errors. 
-		// This all has been morphed into just a single formula agian 
-		// 
-		inline void iterate_quasi_cubic_quadratic(const mass_body& prev1, const mass_body& prev0, const mass_body& current, mass_body& next) noexcept
-		{
-			next.acceleration = next.gravity_force.value / next.mass;
-			next.velocity.value = current.velocity.value +
-				(
-					9 * next.acceleration
-					+ 19 * current.acceleration
-					- 5 * prev0.acceleration
-					+ prev1.acceleration
-					) * _time_delta_times_1_24;
-
-			next.location.value = current.location.value +
-				(
-					9 * next.velocity.value
-					+ 19 * current.velocity.value
-					- 5 * prev0.velocity.value
-					+ prev1.velocity.value
-					) * _time_delta_times_1_24;
-		}
-
-		inline void iterate_quasi_cubic_quadratic_kahan(const mass_body& prev1, const mass_body& prev0, const mass_body& current, mass_body& next) noexcept
-		{
-			next.acceleration = next.gravity_force.value / next.mass;
-			next.velocity = current.velocity +
-				(
-					9 * next.acceleration
-					+ 19 * current.acceleration
-					- 5 * prev0.acceleration
-					+ prev1.acceleration
-					) * _time_delta_times_1_24;
-
-			next.location = current.location +
-				(
-					9 * next.velocity.value
-					+ 19 * current.velocity.value
-					- 5 * prev0.velocity.value
-					+ prev1.velocity.value
-					) * _time_delta_times_1_24;
-		}
-
-		inline void iterate_quasi_cubic_quadratic_kahan_kahan(const mass_body& prev1, const mass_body& prev0, const mass_body& current, mass_body& next) noexcept
-		{
-			next.acceleration = next.gravity_force.value / next.mass;
-
-			acc3d delta_acceleration{ 0.0, 0.0, 0.0 };
-
-			delta_acceleration += 9 * next.acceleration;
-			delta_acceleration += (-5) * prev0.acceleration;
-			delta_acceleration += 19 * current.acceleration;
-			delta_acceleration += prev1.acceleration;
-
-			next.velocity = current.velocity + delta_acceleration.value * _time_delta_times_1_24;
-
-			acc3d delta_velocity{ 0.0, 0.0, 0.0 };
-
-			delta_velocity += 9 * next.velocity.value;
-			delta_velocity += (-5) * prev0.velocity.value;
-			delta_velocity += 19 * current.velocity.value;
-			delta_velocity += prev1.velocity.value;
-
-			next.location = current.location + delta_velocity.value * _time_delta_times_1_24;
-		}
 
 		void iterate_move(const mass_body& prev1, const mass_body& prev0, const mass_body& current, mass_body& next) noexcept
 		{
-			if constexpr (method == integration_method::naive)
-			{
-				iterate_naive(current, next);
-			}
-			else if constexpr (method == integration_method::naive_kahan)
-			{
-				iterate_naive_kahan(current, next);
-			}
-			else if constexpr (method == integration_method::linear)
+			if constexpr (method == integration_method::linear)
 			{
 				iterate_linear(current, next);
 			}
@@ -734,18 +647,6 @@ namespace gravity
 			else if constexpr (method == integration_method::cubic_kahan)
 			{
 				iterate_cubic_kahan(prev1, prev0, current, next);
-			}
-			else if constexpr (method == integration_method::quasi_cubic_quadratic)
-			{
-				iterate_quasi_cubic_quadratic(prev1, prev0, current, next);
-			}
-			else if constexpr (method == integration_method::quasi_cubic_quadratic_kahan)
-			{
-				iterate_quasi_cubic_quadratic_kahan(prev1, prev0, current, next);
-			}
-			else if constexpr (method == integration_method::quasi_cubic_quadratic_kahan_kahan)
-			{
-				iterate_quasi_cubic_quadratic_kahan_kahan(prev1, prev0, current, next);
 			}
 			else
 			{
@@ -817,7 +718,7 @@ namespace gravity
 		void register_body(const mass_body& body)
 		{
 			auto body_copy{ body };
-			body_copy.mass_sqrt_g = body_copy.mass * std::sqrt(GRAVITATIONAL_CONSTANT);
+			body_copy.mass_G = body_copy.mass * GRAVITATIONAL_CONSTANT;
 			for (auto& gen : _bodies_gens)
 			{
 				gen.push_back(body_copy);
