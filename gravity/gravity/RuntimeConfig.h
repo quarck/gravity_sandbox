@@ -24,7 +24,7 @@ namespace gravity
 
         bool _auto_start{ false };
 
-        integration_method method{ integration_method::cubic_kahan };
+        integration_method method{ integration_method::quasi_cubic_quadratic_kahan_kahan };
 
         std::string _report_centre{};
 
@@ -136,7 +136,7 @@ namespace gravity
                     idx++;
 
                     if (m < static_cast<int>(integration_method::naive) ||
-                        m > static_cast<int>(integration_method::cubic_kahan))
+                        m > static_cast<int>(integration_method::quasi_cubic_quadratic_kahan_kahan))
                     {
                         return false;
                     }
