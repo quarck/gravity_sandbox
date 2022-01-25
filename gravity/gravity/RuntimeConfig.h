@@ -24,7 +24,7 @@ namespace gravity
 
         bool _auto_start{ false };
 
-        integration_method method{ integration_method::quasi_cubic_quadratic_kahan_kahan };
+        integration_method method{ integration_method::cubic_kahan };
 
     public:
 
@@ -55,6 +55,29 @@ namespace gravity
             return std::string(buffer.data(), converted);
         }
 
+        static LPWSTR get_usage()
+        {
+            return
+                L"Usage:\r\n"
+                L"gravity.exe [--input <input_file.csv>] [--output <output.csv>] [options]\r\n"
+                L"options are:\r\n"
+                L"  --time-delta <time_delta_seconds>\r\n" L"    default is 1.0, supports float values\r\n"
+                L"  --report-every <simulated_seconds>\r\n" L"    report into <output.csv> every given simulated period\r\n"
+                L"  --duration <simulated_seconds>\r\n" L"    automatically stop the simulation after simulating this much\r\n"
+                L"  --auto-start\r\n" L"    start unpaused\r\n"
+                L"  --method <integration_method>\r\n" L"    Use specific integration method\r\n"
+                L"    Supported integration methods\r\n"
+                L"    0 - naive\r\n" L"         v += f(t) * dt\r\n"
+                L"    1 - naive_kahan\r\n" L"         same using Kahan sum\r\n"
+                L"    2 - linear\r\n" L"         v += (f(t) + f(t-1)) / 2.0 * dt\r\n"
+                L"    3 - linear_kahan\r\n" L"         same using Kahan sum\r\n"
+                L"    4 - quadratic\r\n" L"         v += (5*f(t) + 8*f(t-1) - f(t-2)) / 12.0 * dt\r\n"
+                L"    5 - quadratic_kahan\r\n" L"         same using Kahan sum\r\n"
+                L"    6 - cubic\r\n" L"         v += (-f(t) + 13*f(t-1) + 13*f(t-2) - f(t-3)) / 24.0 * dt\r\n"
+                L"    7 - cubic_kahan [DEFAULT]\r\n" L"         same using Kahan sum\r\n"
+                ;
+        }
+
         bool parse_command_line(LPWSTR lpszCmdLine)
         {
             if (wcscmp(lpszCmdLine, L"") == 0)
@@ -64,6 +87,9 @@ namespace gravity
 
             int argc;
             LPWSTR* argv = CommandLineToArgvW(lpszCmdLine, &argc);
+
+            uint64_t report_every_n_seconds = 1000;
+            uint64_t duration = 0; // infinite 
 
             for (int idx = 0; idx < argc; idx++)
             {
@@ -82,14 +108,14 @@ namespace gravity
                     _time_delta = std::stod(std::wstring{ argv[idx + 1] });
                     idx++;
                 }
-                else if (wcscmp(argv[idx], L"--report-every-n") == 0 && (idx + 1) < argc)
+                else if (wcscmp(argv[idx], L"--report-every") == 0 && (idx + 1) < argc)
                 {
-                    _report_every_n = std::stoull(std::wstring{ argv[idx + 1] });
+                    report_every_n_seconds = std::stoull(std::wstring{ argv[idx + 1] });
                     idx++;
                 }
-                else if (wcscmp(argv[idx], L"--max-n") == 0 && (idx + 1) < argc)
+                else if (wcscmp(argv[idx], L"--duration") == 0 && (idx + 1) < argc)
                 {
-                    _max_n =  std::stoull(std::wstring{ argv[idx + 1] });
+                    duration =  std::stoull(std::wstring{ argv[idx + 1] });
                     idx++;
                 }
                 else if (wcscmp(argv[idx], L"--auto-start") == 0)
@@ -102,7 +128,7 @@ namespace gravity
                     idx++;
 
                     if (m < static_cast<int>(integration_method::naive) ||
-                        m > static_cast<int>(integration_method::quasi_cubic_quadratic_kahan_kahan))
+                        m > static_cast<int>(integration_method::cubic_kahan))
                     {
                         return false;
                     }
@@ -113,6 +139,13 @@ namespace gravity
                 {
                     return false;
                 }
+            }
+
+            _report_every_n = static_cast<uint64_t>(std::round(static_cast<double>(report_every_n_seconds) / _time_delta));
+
+            if (duration != 0)
+            {
+                _max_n = static_cast<uint64_t>(std::round(static_cast<double>(duration) / _time_delta));
             }
 
             return true;

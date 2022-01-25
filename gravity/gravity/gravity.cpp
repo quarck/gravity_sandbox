@@ -316,25 +316,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hCurrentInst, _In_opt_ HINSTANCE hPreviousI
     gravity::runtime_config config;
     if (!config.parse_command_line(lpszCmdLine))
     {
-        MessageBox(
-            NULL, 
-            L"The command line arguments passes are invalid. \r\nUsage:\r\n"
-            L"gravity.exe [--input <input_file.csv>] [--output <output.csv>] [--time-delta <time_delta_seconds>] [--report-every-n <N>] [--max-n <N>] [--method <M>]\r\n"
-            L"Supported integration methods (--method): \r\n"
-            L"0 - naive\r\n"
-            L"1 - naive_kahan\r\n"
-            L"2 - linear\r\n"
-            L"3 - linear_kahan\r\n"
-            L"4 - quadratic\r\n"
-            L"5 - quadratic_kahan\r\n"
-            L"6 - cubic\r\n"
-            L"7 - cubic_kahan\r\n"
-            L"8 - quasi_cubic_quadratic\r\n"
-            L"9 - quasi_cubic_quadratic_kahan\r\n"
-            L"10 - quasi_cubic_quadratic_kahan_kahan [DEFAULT]\r\n",
-            L"Incorrect usage", 
-            MB_OK | MB_ICONHAND);
-
+        MessageBox( NULL, gravity::runtime_config::get_usage(), L"Incorrect usage",  MB_OK | MB_ICONHAND);
         return 0;
     }
 
@@ -379,21 +361,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hCurrentInst, _In_opt_ HINSTANCE hPreviousI
         controller = std::unique_ptr<TMainController>(
             new gravity::MainController<gravity::integration_method::cubic_kahan>(config));
         break;
-
-    case gravity::integration_method::quasi_cubic_quadratic:
-        controller = std::unique_ptr<TMainController>(
-            new gravity::MainController<gravity::integration_method::quasi_cubic_quadratic>(config));
-        break;
-
-    case gravity::integration_method::quasi_cubic_quadratic_kahan:
-        controller = std::unique_ptr<TMainController>(
-            new gravity::MainController<gravity::integration_method::quasi_cubic_quadratic_kahan>(config));
-        break;
-
-    case gravity::integration_method::quasi_cubic_quadratic_kahan_kahan:
-        controller = std::unique_ptr<TMainController>(
-            new gravity::MainController<gravity::integration_method::quasi_cubic_quadratic_kahan_kahan>(config));
-        break;
     }
 
     controller->SetHWND(
@@ -416,6 +383,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE hCurrentInst, _In_opt_ HINSTANCE hPreviousI
     Init();
 
     controller->Start();
+
+    UINT_PTR timer_id{ 100 };
+
+    ::SetTimer(controller->GetHWND(), timer_id, 1000, nullptr);
 
     MSG msg;
     while (!controller->IsTerminating() && GetMessage(&msg, controller->GetHWND(), 0, 0))
