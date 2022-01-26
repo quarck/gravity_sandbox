@@ -140,7 +140,7 @@ namespace gravity
 
 			double X, Y, Z, VX, VY, VZ; // some ugly hack to make the numbers below a bit more readable 
 
-			_objects.register_body({"The Sun", 1988500e24, 696000, 1000000, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 });
+			_objects.register_body({"The Sun", 1.98847e30 /* +/- 0.00007e30*/, 696000, 1000000, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0});
 
 			_objects.register_body({ "Mercury", 3.302e23, 2440, 400,  
 				X = -2.167664834454452E+07, Y = -6.619159190648106E+07, Z = -3.420692631296203E+06,
