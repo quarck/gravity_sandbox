@@ -725,37 +725,37 @@ namespace gravity
 			}
 		}
 
-		// 
-		// Calculates the resulting speed of the centre of mass of the struct, and shifts into the frame of reference where
-		// centre of mass of the struct remains stationary. 
-		// also shifts the centre of the view to the centre of mass
-		//
-		void align_observers_frame_of_reference()
-		{
-			acc3d mass_velocity{};
-			acc3d mass_location{};	
-			acc<double> total_mass{};
+		//// 
+		//// Calculates the resulting speed of the centre of mass of the struct, and shifts into the frame of reference where
+		//// centre of mass of the struct remains stationary. 
+		//// also shifts the centre of the view to the centre of mass
+		////
+		//void align_observers_frame_of_reference()
+		//{
+		//	acc3d mass_velocity{};
+		//	acc3d mass_location{};	
+		//	acc<double> total_mass{};
 
-			for (auto& body : _bodies_gens[0])
-			{				
-				mass_location += body.location.value * body.mass;
-				mass_velocity += body.velocity.value * body.mass;
+		//	for (auto& body : _bodies_gens[0])
+		//	{				
+		//		mass_location += body.location.value * body.mass;
+		//		mass_velocity += body.velocity.value * body.mass;
 
-				total_mass += body.mass;
-			}
+		//		total_mass += body.mass;
+		//	}
 
-			auto& centre_of_mass = mass_location.value / total_mass.value;
-			auto& centre_of_mass_velocity = mass_velocity.value / total_mass.value;
+		//	auto& centre_of_mass = mass_location.value / total_mass.value;
+		//	auto& centre_of_mass_velocity = mass_velocity.value / total_mass.value;
 
-			for (auto& gen : _bodies_gens)
-			{
-				for (auto& body : gen)
-				{
-					body.location.value -= centre_of_mass;
-					body.velocity.value -= centre_of_mass_velocity;
-				}
-			}
-		}
+		//	for (auto& gen : _bodies_gens)
+		//	{
+		//		for (auto& body : gen)
+		//		{
+		//			body.location.value -= centre_of_mass;
+		//			body.velocity.value -= centre_of_mass_velocity;
+		//		}
+		//	}
+		//}
 
 		const std::vector<mass_body>& get_bodies() const noexcept
 		{

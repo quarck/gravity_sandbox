@@ -298,9 +298,9 @@ namespace gravity
 				onLoad();
 				break;
 
-			case 'c': case 'C': 
-				onAlignFrameOfRef();
-				break;
+			//case 'c': case 'C': 
+			//	onAlignFrameOfRef();
+			//	break;
 
 			case 't': case 'T': 
 				onToggleScreenRecording();
@@ -457,11 +457,11 @@ namespace gravity
 			}
 		}
 
-		void onAlignFrameOfRef()
-		{
-			std::lock_guard<std::mutex> l(worldLock);
-			world.align_observers_frame_of_reference();
-		}
+		//void onAlignFrameOfRef()
+		//{
+		//	std::lock_guard<std::mutex> l(worldLock);
+		//	world.align_observers_frame_of_reference();
+		//}
 
     };
 }

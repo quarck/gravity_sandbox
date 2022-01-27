@@ -253,8 +253,6 @@ namespace gravity
 				X = 2.249461717304943E+09, Y = -4.628102738753292E+09, Z = -1.551550140308864E+08,
 				VX = 5.057298851302190E+00, VY = 1.342620937103221E+00, VZ = -1.430982763083136E+00 });
 
-			_objects.align_observers_frame_of_reference();
-
 
 			/*note: expected Mars' vectors at 1642204800000 are: 
 
@@ -294,10 +292,10 @@ X =-1.033890980382836E+08 Y =-2.022621998544986E+08 Z =-1.702828498137295E+06
 			return _objects.current_time_epoch_millis();
 		}
 
-		void align_observers_frame_of_reference() noexcept
-		{
-			_objects.align_observers_frame_of_reference();
-		}
+		//void align_observers_frame_of_reference() noexcept
+		//{
+		//	_objects.align_observers_frame_of_reference();
+		//}
 
 		void set_time_delta(double time_delta)
 		{
