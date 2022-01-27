@@ -252,7 +252,7 @@ namespace gravity
 					focus += focused_obj_modulo;
 				focus = (focus % focused_obj_modulo) - 1;
 
-				PrintStats(details, focus != -1 ? objects[focus].label : "");
+				PrintStats(details, focus != -1 ? objects[focus].label : "barycenter");
 
 				glScalef(
 					static_cast<GLfloat>(2.0 / gravity::props::ViewPortWidth),
@@ -261,18 +261,27 @@ namespace gravity
 
                // glTranslatef(-gravity::props::ViewPortWidth / 2.0f, -gravity::props::ViewPortHeight / 2.0f, 0.0);
 
-				double vpx{ 0.0 };
-				double vpy{ 0.0 };
+				vec3d_pd focus_loc{ 0.0, 0.0, 0.0 };
 
 				if (focus != -1)
 				{
-					vpx = objects[focus].location.value.x();
-					vpy = objects[focus].location.value.y();
+					focus_loc = objects[focus].location.value;
+				}
+				else
+				{
+					vec3d_pd mass_loc{ 0.0, 0.0, 0.0 };
+					double mass{ 0.0 };
+					for (auto& b : objects)
+					{
+						mass_loc += b.location.value * b.mass;
+						mass += b.mass;
+					}
+					focus_loc = mass_loc / mass;
 				}
 
 				for (auto& b : objects)
 				{
-					DrawBody(b, vpx, vpy);
+					DrawBody(b, focus_loc.x(), focus_loc.y());
 				}
 			}
 
