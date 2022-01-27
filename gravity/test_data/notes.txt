@@ -1,0 +1,11 @@
+Note: 
+exact coordinates for exact circular orbits: 
+
+y = R*sin(v*t/R)
+x = R*cos(v*t/R)
+
+Where R is the radius to the baricentre 
+
+Orbital velocities: 
+v1 = sqrt(G*M1*R2)/(R1+R2)
+v2 = sqrt(G*M2*R1)/(R1+R2)

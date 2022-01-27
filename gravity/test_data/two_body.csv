@@ -1,0 +1,3 @@
+iteration,epoch_millis,body_idx,label,mass,radius_km,temperature,location_x_km,location_y_km,location_z_km,velocity_x_kms,velocity_y_kms,velocity_z_kms
+1,0,0,Body 1,3e+27,10000,400,-1e+8,0,0,0,-0.204240972872732,0
+1,0,1,Body 2,1e+27,10000,400,3.e+8,0,0,0,0.612722918618196,0
